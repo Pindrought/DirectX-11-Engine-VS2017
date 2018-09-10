@@ -147,15 +147,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine.cpp" />
     <ClCompile Include="ErrorLogger.cpp" />
     <ClCompile Include="RenderWindow.cpp" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="StringConverter.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine.h" />
     <ClInclude Include="ErrorLogger.h" />
     <ClInclude Include="RenderWindow.h" />
     <ClInclude Include="StringConverter.h" />
+    <ClInclude Include="WindowContainer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
