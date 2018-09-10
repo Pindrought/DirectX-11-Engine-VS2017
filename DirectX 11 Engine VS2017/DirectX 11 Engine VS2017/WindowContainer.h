@@ -3,6 +3,7 @@
 class WindowContainer
 {
 public:
+
 protected:
 	RenderWindow render_window;
 
