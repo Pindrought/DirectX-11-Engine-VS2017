@@ -1,4 +1,4 @@
-//Tutorial 5 Solution 2018-09-11
+//Tutorial 6 Solution 2018-09-12
 #include "Engine.h"
 #pragma comment(lib,"d3d11.lib")
 #pragma comment(lib,"DirectXTK.lib")
