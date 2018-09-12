@@ -107,7 +107,7 @@ LRESULT WindowContainer::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 		{
 			mouse.OnWheelDown(x, y);
 		}
-		break;
+		return 0;
 	}
 	default:
 		return DefWindowProc(hwnd, uMsg, wParam, lParam);
