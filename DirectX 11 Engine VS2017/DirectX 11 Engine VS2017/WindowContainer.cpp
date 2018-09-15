@@ -17,6 +17,8 @@ WindowContainer::WindowContainer()
 			ErrorLogger::Log(GetLastError(), "Failed to register raw input devices.");
 			exit(-1);
 		}
+
+		raw_input_initialized = true;
 	}
 }
 
