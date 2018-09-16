@@ -11,6 +11,6 @@ bool Graphics::Initialize(HWND hwnd, int width, int height)
 bool Graphics::InitializeDirectX(HWND hwnd, int width, int height)
 {
 	std::vector<AdapterData> adapters = AdapterReader::GetAdapters();
-
+	
 	return true;
 }

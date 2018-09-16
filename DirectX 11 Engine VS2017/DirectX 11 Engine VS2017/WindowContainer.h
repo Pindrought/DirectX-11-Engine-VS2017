@@ -2,7 +2,7 @@
 #include "RenderWindow.h"
 #include "Keyboard/KeyboardClass.h"
 #include "Mouse/MouseClass.h"
-#include "Graphics\Graphics.h"
+#include "Graphics/Graphics.h"
 
 class WindowContainer
 {
