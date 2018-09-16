@@ -25,6 +25,12 @@
     <Filter Include="Source Files\Mouse">
       <UniqueIdentifier>{d733fa7e-40cf-4e35-893f-8bd78fb41d99}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Graphics">
+      <UniqueIdentifier>{c47976b4-c7f7-4098-97e5-2c2866fd1c3d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Graphics">
+      <UniqueIdentifier>{35538486-24d6-460c-beed-6ff66377616a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source.cpp">
@@ -57,6 +63,12 @@
     <ClCompile Include="Mouse\MouseEvent.cpp">
       <Filter>Source Files\Mouse</Filter>
     </ClCompile>
+    <ClCompile Include="Graphics\Graphics.cpp">
+      <Filter>Source Files\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\AdapterReader.cpp">
+      <Filter>Source Files\Graphics</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="StringConverter.h">
@@ -85,6 +97,12 @@
     </ClInclude>
     <ClInclude Include="Mouse\MouseEvent.h">
       <Filter>Header Files\Mouse</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\Graphics.h">
+      <Filter>Header Files\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\AdapterReader.h">
+      <Filter>Header Files\Graphics</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
