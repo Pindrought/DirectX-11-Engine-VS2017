@@ -5,6 +5,9 @@ bool Graphics::Initialize(HWND hwnd, int width, int height)
 	if (!InitializeDirectX(hwnd, width, height))
 		return false;
 
+	if (!InitializeShaders())
+		return false;
+
 	return true;
 }
 
@@ -84,4 +87,12 @@ bool Graphics::InitializeDirectX(HWND hwnd, int width, int height)
 	this->deviceContext->OMSetRenderTargets(1, this->renderTargetView.GetAddressOf(), NULL);
 
 	return true;
+}
+
+bool Graphics::InitializeShaders()
+{
+	if (!pixelshader.Initialize(this->device, L"path.cso"))
+		return false;
+
+	return false;
 }
