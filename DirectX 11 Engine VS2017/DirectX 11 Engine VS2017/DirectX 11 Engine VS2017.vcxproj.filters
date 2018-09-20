@@ -69,7 +69,7 @@
     <ClCompile Include="Graphics\AdapterReader.cpp">
       <Filter>Source Files\Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="Graphics\PixelShader.cpp">
+    <ClCompile Include="Graphics\Shaders.cpp">
       <Filter>Source Files\Graphics</Filter>
     </ClCompile>
   </ItemGroup>
@@ -107,8 +107,16 @@
     <ClInclude Include="Graphics\AdapterReader.h">
       <Filter>Header Files\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="Graphics\PixelShader.h">
+    <ClInclude Include="Graphics\Shaders.h">
       <Filter>Header Files\Graphics</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Graphics\pixelshader.hlsl">
+      <Filter>Resource Files</Filter>
+    </FxCompile>
+    <FxCompile Include="Graphics\vertexshader.hlsl">
+      <Filter>Resource Files</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

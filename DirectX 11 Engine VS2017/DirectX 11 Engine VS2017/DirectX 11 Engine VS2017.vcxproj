@@ -151,7 +151,7 @@
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="ErrorLogger.cpp" />
     <ClCompile Include="Graphics\Graphics.cpp" />
-    <ClCompile Include="Graphics\PixelShader.cpp" />
+    <ClCompile Include="Graphics\Shaders.cpp" />
     <ClCompile Include="Keyboard\KeyboardClass.cpp" />
     <ClCompile Include="Keyboard\KeyboardEvent.cpp" />
     <ClCompile Include="Mouse\MouseClass.cpp" />
@@ -171,9 +171,19 @@
     <ClInclude Include="Mouse\MouseClass.h" />
     <ClInclude Include="Mouse\MouseEvent.h" />
     <ClInclude Include="RenderWindow.h" />
-    <ClInclude Include="Graphics\PixelShader.h" />
+    <ClInclude Include="Graphics\Shaders.h" />
     <ClInclude Include="StringConverter.h" />
     <ClInclude Include="WindowContainer.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Graphics\pixelshader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Graphics\vertexshader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+    </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
