@@ -1,6 +1,8 @@
 #pragma once
 #include "AdapterReader.h"
 #include "Shaders.h"
+#include "D3DBuffer.h"
+#include <DirectXMath.h>
 
 class Graphics
 {
@@ -22,4 +24,6 @@ private:
 
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vertBuffer;
+	Microsoft::WRL::ComPtr<ID3D11Buffer> instanceBuffer;
+	std::vector<DirectX::XMMATRIX> matrices;
 };

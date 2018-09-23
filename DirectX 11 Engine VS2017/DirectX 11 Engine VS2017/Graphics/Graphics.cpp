@@ -1,6 +1,16 @@
 #include "Graphics.h"
 #include <DirectXMath.h>
 
+struct Vertex    //Overloaded Vertex Structure
+{
+	Vertex() {}
+	Vertex(float x, float y, float z)
+		: pos(x, y, z) {}
+
+
+	DirectX::XMFLOAT3 pos;
+};
+
 bool Graphics::Initialize(HWND hwnd, int width, int height)
 {
 	if (!InitializeDirectX(hwnd, width, height))
@@ -12,16 +22,55 @@ bool Graphics::Initialize(HWND hwnd, int width, int height)
 	if (!InitializeScene())
 		return false;
 
+	matrices.push_back(DirectX::XMMatrixTranslation(0.0f, 0.0f, 0.0f));
+	matrices.push_back(DirectX::XMMatrixTranslation(0.1f, 0.0f, 0.0f));
+	matrices.push_back(DirectX::XMMatrixTranslation(-0.1f, 0.0f, 0.0f));
+	matrices.push_back(DirectX::XMMatrixTranslation(0.0f, +0.1f, 0.0f));
+	matrices.push_back(DirectX::XMMatrixTranslation(0.0f, -0.2f, 0.0f));
+
+	D3D11_BUFFER_DESC instBuffDesc;
+	ZeroMemory(&instBuffDesc, sizeof(instBuffDesc));
+
+	instBuffDesc.Usage = D3D11_USAGE_DEFAULT;
+	instBuffDesc.ByteWidth = sizeof(DirectX::XMMATRIX) * matrices.size();
+	instBuffDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	instBuffDesc.CPUAccessFlags = 0;
+	instBuffDesc.MiscFlags = 0;
+	instBuffDesc.StructureByteStride = 0;
+
+	D3D11_SUBRESOURCE_DATA instData;
+	ZeroMemory(&instData, sizeof(instData));
+
+	instData.pSysMem = matrices.data();
+	HRESULT hr = this->device->CreateBuffer(&instBuffDesc, &instData, instanceBuffer.GetAddressOf());
+	if (FAILED(hr))
+	{
+		ErrorLogger::Log(hr, "createbuffer");
+	}
+
+
 	return true;
 }
 
 void Graphics::RenderFrame()
 {
+	ID3D11Buffer* vertInstBuffers[2] = { vertBuffer.Get() , instanceBuffer.Get() };
+
+	UINT strides[2] = { sizeof(Vertex), sizeof(DirectX::XMMATRIX) };
+	UINT offsets[2] = { 0, 0 };
+	this->deviceContext->IASetVertexBuffers(0, 2, vertInstBuffers, strides, offsets);
+
+
 	this->deviceContext->VSSetShader(vertexshader.GetShader(), NULL, 0);
 	this->deviceContext->PSSetShader(pixelshader.GetShader(), NULL, 0);
 	float bgcolor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	this->deviceContext->ClearRenderTargetView(this->renderTargetView.Get(), bgcolor);
-	this->deviceContext->Draw(1, 0);
+	//this->deviceContext->Draw(1, 0);
+
+
+	this->deviceContext->DrawInstanced(1, matrices.size(), 0, 0);
+
+
 	this->swapchain->Present(1, NULL);
 }
 
@@ -60,7 +109,7 @@ bool Graphics::InitializeDirectX(HWND hwnd, int width, int height)
 	hr = D3D11CreateDeviceAndSwapChain(	adapters[0].pAdapter, //IDXGI Adapter
 										D3D_DRIVER_TYPE_UNKNOWN,
 										NULL, //FOR SOFTWARE DRIVER TYPE
-										NULL, //FLAGS FOR RUNTIME LAYERS
+										2, //FLAGS FOR RUNTIME LAYERS
 										NULL, //FEATURE LEVELS ARRAY
 										0, //# OF FEATURE LEVELS IN ARRAY
 										D3D11_SDK_VERSION,
@@ -133,19 +182,15 @@ bool Graphics::InitializeShaders()
 
 bool Graphics::InitializeScene()
 {
-	struct Vertex    //Overloaded Vertex Structure
-	{
-		Vertex() {}
-		Vertex(float x, float y, float z)
-			: pos(x, y, z) {}
-
-
-		DirectX::XMFLOAT3 pos;
-	};
+	
 
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "INSTANCEMAT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+		{ "INSTANCEMAT", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+		{ "INSTANCEMAT", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+		{ "INSTANCEMAT", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 	};
 
 	UINT numElements = ARRAYSIZE(layout);
