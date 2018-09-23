@@ -92,26 +92,9 @@ bool Graphics::InitializeDirectX(HWND hwnd, int width, int height)
 bool Graphics::InitializeShaders()
 {
 
-	std::wstring shaderfolder = L"";
-#pragma region DetermineShaderPath
-	if (IsDebuggerPresent() == TRUE)
-	{
-#ifdef _DEBUG //Debug Mode
-	#ifdef _WIN64 //x64
-			shaderfolder = L"..\\x64\\Debug\\";
-	#else  //x86 (Win32)
-			shaderfolder = L"..\\Debug\\";
-	#endif
-	#else //Release Mode
-	#ifdef _WIN64 //x64
-			shaderfolder = L"..\\x64\\Release\\";
-	#else  //x86 (Win32)
-			shaderfolder = L"..\\Release\\";
-	#endif
-#endif
-	}
 
-	if (!vertexshader.Initialize(this->device, shaderfolder + L"vertexshader.cso"))
+
+	if (!vertexshader.Initialize(this->device, L"..\\x64\\Debug\\vertexshader.cso"))
 		return false;
 
 	D3D11_INPUT_ELEMENT_DESC layout[] =
@@ -121,12 +104,12 @@ bool Graphics::InitializeShaders()
 
 	UINT numElements = ARRAYSIZE(layout);
 
-	HRESULT hr = this->device->CreateInputLayout(layout, numElements, this->vertexshader.GetBuffer()->GetBufferPointer(), this->vertexshader.GetBuffer()->GetBufferSize(), this->inputLayout.GetAddressOf());
-	if (FAILED(hr))
-	{
-		ErrorLogger::Log(hr, "Failed to create input layout.");
+	if (!vertexshader.Initialize(this->device, shaderfolder + L"vertexshader.cso", layout, numElements))
 		return false;
-	}
+
+	
+
+	
 
 	return true;
 }
