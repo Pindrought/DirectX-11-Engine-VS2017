@@ -171,6 +171,7 @@
     <ClInclude Include="Mouse\MouseEvent.h" />
     <ClInclude Include="RenderWindow.h" />
     <ClInclude Include="StringConverter.h" />
+    <ClInclude Include="Graphics\Vertexh.h" />
     <ClInclude Include="WindowContainer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

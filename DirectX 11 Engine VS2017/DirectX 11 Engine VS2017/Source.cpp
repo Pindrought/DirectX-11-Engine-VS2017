@@ -1,4 +1,4 @@
-//Tutorial 9 Solution 2018-09-17
+//Tutorial 10 Solution 2018-09-23
 #include "Engine.h"
 
 
@@ -16,3 +16,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 	return 0;
 }
+
+//INPUT ASSEMBLER
+//VERTEX SHADER
+//RASTERIZER
+//PIXEL SHADER
+//OUTPUT MERGER
