@@ -1,7 +1,11 @@
 #pragma once
 #include <DirectXMath.h>
 
-struct Vertex
+struct Vertex    //Overloaded Vertex Structure
 {
-	DirectX::XMFLOAT4 x, y;
+	Vertex() {}
+	Vertex(float x, float y)
+		: pos(x, y) {}
+
+	DirectX::XMFLOAT2 pos;
 };
