@@ -1,7 +1,7 @@
 #pragma once
 #include <DirectXMath.h>
 
-struct Vertex 
+struct Vertex
 {
 	Vertex() {}
 	Vertex(float x, float y)
