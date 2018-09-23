@@ -17,4 +17,5 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> renderTargetView;
 
 	VertexShader vertexshader;
+	PixelShader pixelshader;
 };

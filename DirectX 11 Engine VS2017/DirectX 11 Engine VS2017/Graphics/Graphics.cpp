@@ -133,7 +133,8 @@ bool Graphics::InitializeShaders()
 	if (!vertexshader.Initialize(this->device, shaderfolder + L"vertexshader.cso", layout, numElements))
 		return false;
 
-	
+	if (!pixelshader.Initialize(this->device, shaderfolder + L"pixelshader.cso"))
+		return false;
 
 
 	return true;
