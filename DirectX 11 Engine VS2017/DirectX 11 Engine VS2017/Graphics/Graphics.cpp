@@ -50,18 +50,18 @@ bool Graphics::InitializeDirectX(HWND hwnd, int width, int height)
 	scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
 	HRESULT hr;
-	hr = D3D11CreateDeviceAndSwapChain(	adapters[0].pAdapter, //IDXGI Adapter
-										D3D_DRIVER_TYPE_UNKNOWN,
-										NULL, //FOR SOFTWARE DRIVER TYPE
-										NULL, //FLAGS FOR RUNTIME LAYERS
-										NULL, //FEATURE LEVELS ARRAY
-										0, //# OF FEATURE LEVELS IN ARRAY
-										D3D11_SDK_VERSION,
-										&scd, //Swapchain description
-										this->swapchain.GetAddressOf(), //Swapchain Address
-										this->device.GetAddressOf(), //Device Address
-										NULL, //Supported feature level
-										this->deviceContext.GetAddressOf()); //Device Context Address
+	hr = D3D11CreateDeviceAndSwapChain(adapters[0].pAdapter, //IDXGI Adapter
+		D3D_DRIVER_TYPE_UNKNOWN,
+		NULL, //FOR SOFTWARE DRIVER TYPE
+		NULL, //FLAGS FOR RUNTIME LAYERS
+		NULL, //FEATURE LEVELS ARRAY
+		0, //# OF FEATURE LEVELS IN ARRAY
+		D3D11_SDK_VERSION,
+		&scd, //Swapchain description
+		this->swapchain.GetAddressOf(), //Swapchain Address
+		this->device.GetAddressOf(), //Device Address
+		NULL, //Supported feature level
+		this->deviceContext.GetAddressOf()); //Device Context Address
 
 	if (FAILED(hr))
 	{
@@ -104,12 +104,12 @@ bool Graphics::InitializeShaders()
 
 	UINT numElements = ARRAYSIZE(layout);
 
-	if (!vertexshader.Initialize(this->device, shaderfolder + L"vertexshader.cso", layout, numElements))
+	HRESULT hr = this->device->CreateInputLayout(layout, numElements, this->vertexshader.GetBuffer()->GetBufferPointer(), this->vertexshader.GetBuffer()->GetBufferSize(), this->inputLayout.GetAddressOf());
+	if (FAILED(hr))
+	{
+		ErrorLogger::Log(hr, "Failed to create input layout.");
 		return false;
-
-	
-
-	
+	}
 
 	return true;
 }

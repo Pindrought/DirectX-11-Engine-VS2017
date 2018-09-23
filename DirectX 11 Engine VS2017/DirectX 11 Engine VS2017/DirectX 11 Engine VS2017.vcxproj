@@ -173,7 +173,7 @@
     <ClInclude Include="RenderWindow.h" />
     <ClInclude Include="Graphics\Shaders.h" />
     <ClInclude Include="StringConverter.h" />
-    <ClInclude Include="Graphics\Vertexh.h" />
+    <ClInclude Include="Graphics\Vertex.h" />
     <ClInclude Include="WindowContainer.h" />
   </ItemGroup>
   <ItemGroup>
