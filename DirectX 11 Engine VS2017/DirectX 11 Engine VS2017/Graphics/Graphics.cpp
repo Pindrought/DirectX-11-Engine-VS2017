@@ -196,10 +196,7 @@ bool Graphics::InitializeScene()
 	UINT numElements = ARRAYSIZE(layout);
 
 
-	Vertex v[] =
-	{
-		Vertex(0.0f, 0.0f, 0.0f),
-	};
+	
 
 
 	HRESULT hr = this->device->CreateInputLayout(layout, numElements, vertexshader.GetBuffer()->GetBufferPointer(),
@@ -209,6 +206,11 @@ bool Graphics::InitializeScene()
 		ErrorLogger::Log(hr, "Failed to create input layout.");
 		return false;
 	}
+
+	Vertex v[] =
+	{
+		Vertex(0.0f, 0.0f, 0.0f),
+	};
 
 	D3D11_BUFFER_DESC vertexBufferDesc;
 	ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
