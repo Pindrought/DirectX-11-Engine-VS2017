@@ -17,3 +17,4 @@ private:
 	Microsoft::WRL::ComPtr<ID3D10Blob> shader_buffer;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
 };
+
