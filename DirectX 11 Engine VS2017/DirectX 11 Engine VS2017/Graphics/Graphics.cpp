@@ -86,6 +86,18 @@ bool Graphics::InitializeDirectX(HWND hwnd, int width, int height)
 
 	this->deviceContext->OMSetRenderTargets(1, this->renderTargetView.GetAddressOf(), NULL);
 
+	//Create the Viewport
+	D3D11_VIEWPORT viewport;
+	ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
+
+	viewport.TopLeftX = 0;
+	viewport.TopLeftY = 0;
+	viewport.Width = width;
+	viewport.Height = height;
+
+	//Set the Viewport
+	this->deviceContext->RSSetViewports(1, &viewport);
+
 	return true;
 }
 
