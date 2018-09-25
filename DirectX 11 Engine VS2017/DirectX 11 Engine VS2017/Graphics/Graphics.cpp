@@ -16,29 +16,21 @@ bool Graphics::Initialize(HWND hwnd, int width, int height)
 
 void Graphics::RenderFrame()
 {
-	float bgcolor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	float bgcolor[] = { 0.0f, 0.0f, 1.0f, 1.0f };
 	this->deviceContext->ClearRenderTargetView(this->renderTargetView.Get(), bgcolor);
 	
 	this->deviceContext->IASetInputLayout(this->vertexshader.GetInputLayout());
 	this->deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	this->deviceContext->RSSetState(this->rasterizerState.Get());
 
 	this->deviceContext->VSSetShader(vertexshader.GetShader(), NULL, 0);
 	this->deviceContext->PSSetShader(pixelshader.GetShader(), NULL, 0);
-
-	static float zrot = 0.0f;
-	zrot += 0.01f;
-	cb_vs.Data.rotationMat = DirectX::XMMatrixRotationRollPitchYaw(0.0f, 0.0f, zrot);
-	//cb_vs.Data.rotationMat = DirectX::XMMatrixIdentity();
-	cb_vs.ApplyChanges(this->deviceContext);
-	this->deviceContext->VSSetConstantBuffers(0, 1, cb_vs.BufferAddress());
 
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
 	this->deviceContext->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
 
 
-	this->deviceContext->Draw(6, 0);
+	this->deviceContext->Draw(3, 0);
 
 	this->swapchain->Present(1, NULL);
 }
@@ -123,18 +115,6 @@ bool Graphics::InitializeDirectX(HWND hwnd, int width, int height)
 	//Set the Viewport
 	this->deviceContext->RSSetViewports(1, &viewport);
 
-	D3D11_RASTERIZER_DESC rasterizerDesc;
-	ZeroMemory(&rasterizerDesc, sizeof(D3D11_RASTERIZER_DESC));
-
-	rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
-	rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
-	hr = this->device->CreateRasterizerState(&rasterizerDesc, this->rasterizerState.GetAddressOf());
-	if (hr != S_OK)
-	{
-		ErrorLogger::Log(hr, "Failed to create rasterizer state.");
-		return false;
-	}
-
 	return true;
 }
 
@@ -163,20 +143,12 @@ bool Graphics::InitializeShaders()
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
 		{"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
-		{"COLOR", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
 	};
 
 	UINT numElements = ARRAYSIZE(layout);
 
 	if (!vertexshader.Initialize(this->device, shaderfolder + L"vertexshader.cso", layout, numElements))
 		return false;
-
-	HRESULT hr = cb_vs.Initialize(this->device);
-	if (FAILED(hr))
-	{
-		ErrorLogger::Log(hr, "Failed to initialize constant buffer.");
-		return false;
-	}
 
 	if (!pixelshader.Initialize(this->device, shaderfolder + L"pixelshader.cso"))
 		return false;
@@ -187,15 +159,11 @@ bool Graphics::InitializeShaders()
 
 bool Graphics::InitializeScene()
 {
-	const float yoff = 0.134f;
 	Vertex v[] =
 	{
-		Vertex(-0.5f, -0.5f, 1.0f, 0.0f, 0.0f), //BottomLeft
-		Vertex(-0.5f, 0.5f, 0.0f, 1.0f, 0.0f), //TopLeft
-		Vertex(0.5f, 0.5f, 0.0f, 1.0f, 0.0f), //TopRight
-		Vertex(-0.5f, -0.5f, 1.0f, 0.0f, 0.0f), //BottomLeft
-		Vertex(0.5f, 0.5f, 0.0f, 1.0f, 0.0f), //TopRight
-		Vertex(0.5f, -0.5f, 0.0f, 0.0f, 1.0f), //BottomRight
+		Vertex(0.0f, -0.1f), //Center Point
+		Vertex(-0.1f, 0.0f), //Left Point
+		Vertex(0.1f, 0.0f), //Right Point
 	};
 
 	D3D11_BUFFER_DESC vertexBufferDesc;
