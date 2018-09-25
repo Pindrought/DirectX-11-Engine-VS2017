@@ -2,6 +2,7 @@
 #include "AdapterReader.h"
 #include "Shaders.h"
 #include "Vertex.h"
+#include "ConstantBuffer.h"
 
 class Graphics
 {
@@ -22,4 +23,7 @@ private:
 	PixelShader pixelshader;
 
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
+
+	Microsoft::WRL::ComPtr<ID3D11RasterizerState> rasterizerState;
+	ConstantBuffer<CB_VS> cb_vs;
 };
