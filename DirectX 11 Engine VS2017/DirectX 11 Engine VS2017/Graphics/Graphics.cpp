@@ -29,8 +29,6 @@ void Graphics::RenderFrame()
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
 	this->deviceContext->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
-
-
 	this->deviceContext->Draw(3, 0);
 
 	this->swapchain->Present(1, NULL);
@@ -175,11 +173,12 @@ bool Graphics::InitializeShaders()
 
 bool Graphics::InitializeScene()
 {
+	//Triangle Verts
 	Vertex v[] =
 	{
-		Vertex(-0.5f,-0.5f,1.0f,0.0f,0.0f), //Bottom Left Red Point
-		Vertex(0.0f,0.5f,0.0f,1.0f,0.0f), //Top Middle Green Point
-		Vertex(0.5f,-0.5f,0.0f,0.0f,1.0f), //Bottom Right Blue Point
+		Vertex(-0.5f,  -0.5f, 1.0f, 0.0f, 0.0f), //Bottom Left [Red]
+		Vertex( 0.0f,   0.5f, 0.0f, 1.0f, 0.0f), //Top Middle [Green]
+		Vertex( 0.5f,  -0.5f, 0.0f, 0.0f, 1.0f), //Bottom Right [Blue]
 	};
 
 	D3D11_BUFFER_DESC vertexBufferDesc;

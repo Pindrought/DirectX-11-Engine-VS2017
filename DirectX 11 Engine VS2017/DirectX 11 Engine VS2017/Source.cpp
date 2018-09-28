@@ -1,4 +1,4 @@
-//Tutorial 16 Solution 2018-09-24
+//Tutorial 17 Solution 2018-09-24
 #include "Engine.h"
 
 
@@ -18,12 +18,3 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 	return 0;
 }
-
-//INPUT ASSEMBLER - COMPLETED
-//VERTEX SHADER - COMPLETED
-//RASTERIZER - COMPLETED
-//PIXEL SHADER - COMPLETED
-//OUTPUT MERGER - COMPLETED
-
-//Create our Vertex Buffer - COMPLETED
-//Draw - COMPLETED
