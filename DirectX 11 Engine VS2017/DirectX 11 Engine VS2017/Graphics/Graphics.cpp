@@ -34,7 +34,9 @@ void Graphics::RenderFrame()
 	//Square
 	this->deviceContext->PSSetShaderResources(0, 1, this->myTexture.GetAddressOf());
 	this->deviceContext->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
-	this->deviceContext->Draw(6, 0);
+	this->deviceContext->IASetIndexBuffer(indicesBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+
+	this->deviceContext->DrawIndexed(6, 0, 0);
 	
 	//Draw Text
 	spriteBatch->Begin();
@@ -250,16 +252,20 @@ bool Graphics::InitializeScene()
 	//Textured Square
 	Vertex v[] =
 	{
-		Vertex(-0.5f,  -0.5f, 1.0f, 0.0f, 1.0f), //Bottom Left 
-		Vertex(-0.5f,   0.5f, 1.0f, 0.0f, 0.0f), //Top Left
-		Vertex( 0.5f,   0.5f, 1.0f, 1.0f, 0.0f), //Top Right
-
-		Vertex(-0.5f, -0.5f, 1.0f, 0.0f, 1.0f), //Bottom Left 
-		Vertex(0.5f,   0.5f, 1.0f, 1.0f, 0.0f), //Top Right
-		Vertex(0.5f,  -0.5f, 1.0f, 1.0f, 1.0f), //Bottom Right
+		Vertex(-0.5f,  -0.5f, 1.0f, 0.0f, 1.0f), //Bottom Left   - [0]
+		Vertex(-0.5f,   0.5f, 1.0f, 0.0f, 0.0f), //Top Left      - [1]
+		Vertex( 0.5f,   0.5f, 1.0f, 1.0f, 0.0f), //Top Right     - [2]
+		Vertex(0.5f,  -0.5f, 1.0f, 1.0f, 1.0f), //Bottom Right   - [3]
 
 	};
 
+	DWORD indices[] =
+	{
+		0, 1, 2,
+		0, 2, 3
+	};
+
+	//Load Vertex Data
 	D3D11_BUFFER_DESC vertexBufferDesc;
 	ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
 
@@ -280,6 +286,25 @@ bool Graphics::InitializeScene()
 		return false;
 	}
 
+	//Load Index Data
+	D3D11_BUFFER_DESC indexBufferDesc;
+	ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
+	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	indexBufferDesc.ByteWidth = sizeof(DWORD)*ARRAYSIZE(indices);
+	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	indexBufferDesc.CPUAccessFlags = 0;
+	indexBufferDesc.MiscFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA indexBufferData;
+	indexBufferData.pSysMem = indices;
+	hr = device->CreateBuffer(&indexBufferDesc, &indexBufferData, indicesBuffer.GetAddressOf());
+	if (FAILED(hr))
+	{
+		ErrorLogger::Log(hr, "Failed to create indices buffer.");
+		return hr;
+	}
+
+	//Load Texture
 	hr = DirectX::CreateWICTextureFromFile(this->device.Get(), L"Data\\Textures\\piano.png", nullptr, myTexture.GetAddressOf());
 	if (FAILED(hr))
 	{
