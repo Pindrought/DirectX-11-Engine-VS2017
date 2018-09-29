@@ -32,19 +32,14 @@ void Graphics::RenderFrame()
 	UINT offset = 0;
 
 	//Square
-	CB_VS_vertexshader cbuffer;
-	cbuffer.xOffset = 0;
-	cbuffer.yOffset = 0.5f;
-	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	HRESULT hr = this->deviceContext->Map(constantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	CopyMemory(mappedResource.pData, &cbuffer, sizeof(CB_VS_vertexshader));
-	this->deviceContext->Unmap(constantBuffer.Get(), 0);
-
+	cb_vs_vertexshader.data.xOffset = 0;
+	cb_vs_vertexshader.data.yOffset = 0.5f;
+	cb_vs_vertexshader.ApplyChanges();
 
 	this->deviceContext->PSSetShaderResources(0, 1, this->myTexture.GetAddressOf());
 	this->deviceContext->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
 	this->deviceContext->IASetIndexBuffer(indicesBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-	this->deviceContext->VSSetConstantBuffers(0, 1, this->constantBuffer.GetAddressOf());
+	this->deviceContext->VSSetConstantBuffers(0, 1, this->cb_vs_vertexshader.GetAddressOf());
 	this->deviceContext->DrawIndexed(6, 0, 0);
 	
 	//Draw Text
@@ -321,15 +316,7 @@ bool Graphics::InitializeScene()
 	}
 
 	//Set up constant buffer for vertex shader
-	D3D11_BUFFER_DESC constantBufferDesc;
-	constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	constantBufferDesc.MiscFlags = 0;
-	constantBufferDesc.ByteWidth = static_cast<UINT>(sizeof(CB_VS_vertexshader) + (16 - (sizeof(CB_VS_vertexshader) % 16)));
-	constantBufferDesc.StructureByteStride = 0;
-
-	hr = this->device->CreateBuffer(&constantBufferDesc, NULL, this->constantBuffer.GetAddressOf());
+	hr = cb_vs_vertexshader.Initialize(this->device.Get(), this->deviceContext.Get());
 	if (FAILED(hr))
 	{
 		ErrorLogger::Log(hr, "Failed to create constant buffer.");
