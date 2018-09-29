@@ -32,16 +32,25 @@ void Graphics::RenderFrame()
 	UINT offset = 0;
 
 	//Square
+	CB_VS_vertexshader cbuffer;
+	cbuffer.xOffset = 0;
+	cbuffer.yOffset = 0.5f;
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	HRESULT hr = this->deviceContext->Map(constantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	CopyMemory(mappedResource.pData, &cbuffer, sizeof(CB_VS_vertexshader));
+	this->deviceContext->Unmap(constantBuffer.Get(), 0);
+
+
 	this->deviceContext->PSSetShaderResources(0, 1, this->myTexture.GetAddressOf());
 	this->deviceContext->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
 	this->deviceContext->IASetIndexBuffer(indicesBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-
+	this->deviceContext->VSSetConstantBuffers(0, 1, this->constantBuffer.GetAddressOf());
 	this->deviceContext->DrawIndexed(6, 0, 0);
 	
 	//Draw Text
-	spriteBatch->Begin();
-	spriteFont->DrawString(spriteBatch.get(), L"HELLO WORLD", DirectX::XMFLOAT2(0, 0), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f,0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
-	spriteBatch->End();
+	this->spriteBatch->Begin();
+	this->spriteFont->DrawString(this->spriteBatch.get(), L"HELLO WORLD", DirectX::XMFLOAT2(0, 0), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f,0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+	this->spriteBatch->End();
 
 	this->swapchain->Present(1, NULL);
 }
@@ -256,7 +265,6 @@ bool Graphics::InitializeScene()
 		Vertex(-0.5f,   0.5f, 1.0f, 0.0f, 0.0f), //Top Left      - [1]
 		Vertex( 0.5f,   0.5f, 1.0f, 1.0f, 0.0f), //Top Right     - [2]
 		Vertex(0.5f,  -0.5f, 1.0f, 1.0f, 1.0f), //Bottom Right   - [3]
-
 	};
 
 	DWORD indices[] =
@@ -309,6 +317,22 @@ bool Graphics::InitializeScene()
 	if (FAILED(hr))
 	{
 		ErrorLogger::Log(hr, "Failed to create wic texture from file.");
+		return false;
+	}
+
+	//Set up constant buffer for vertex shader
+	D3D11_BUFFER_DESC constantBufferDesc;
+	constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	constantBufferDesc.MiscFlags = 0;
+	constantBufferDesc.ByteWidth = static_cast<UINT>(sizeof(CB_VS_vertexshader) + (16 - (sizeof(CB_VS_vertexshader) % 16)));
+	constantBufferDesc.StructureByteStride = 0;
+
+	hr = this->device->CreateBuffer(&constantBufferDesc, NULL, this->constantBuffer.GetAddressOf());
+	if (FAILED(hr))
+	{
+		ErrorLogger::Log(hr, "Failed to create constant buffer.");
 		return false;
 	}
 
