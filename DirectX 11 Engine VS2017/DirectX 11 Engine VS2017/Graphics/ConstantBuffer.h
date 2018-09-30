@@ -50,6 +50,10 @@ public:
 	{
 		D3D11_MAPPED_SUBRESOURCE mappedResource;
 		HRESULT hr = this->deviceContext->Map(buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+		if (FAILED(hr))
+		{
+			ErrorLogger::Log(hr, "Failed to map constant buffer.");
+		}
 		CopyMemory(mappedResource.pData, &data, sizeof(T));
 		this->deviceContext->Unmap(buffer.Get(), 0);
 	}
