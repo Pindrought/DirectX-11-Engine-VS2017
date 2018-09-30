@@ -2,6 +2,8 @@
 
 bool Graphics::Initialize(HWND hwnd, int width, int height)
 {
+	this->windowWidth = width;
+	this->windowHeight = height;
 	if (!InitializeDirectX(hwnd, width, height))
 		return false;
 
@@ -20,32 +22,37 @@ void Graphics::RenderFrame()
 	this->deviceContext->ClearRenderTargetView(this->renderTargetView.Get(), bgcolor);
 	this->deviceContext->ClearDepthStencilView(this->depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-	this->deviceContext->IASetInputLayout(this->vertexshader.GetInputLayout());
+	this->deviceContext->IASetInputLayout(this->vs_3d_textures.GetInputLayout());
 	this->deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	this->deviceContext->RSSetState(this->rasterizerState.Get());
 	this->deviceContext->OMSetDepthStencilState(this->depthStencilState.Get(), 0);
 	this->deviceContext->PSSetSamplers(0, 1, this->samplerState.GetAddressOf());
-	this->deviceContext->VSSetShader(vertexshader.GetShader(), NULL, 0);
-	this->deviceContext->PSSetShader(pixelshader.GetShader(), NULL, 0);
+	this->deviceContext->VSSetShader(vs_3d_textures.GetShader(), NULL, 0);
+	this->deviceContext->PSSetShader(ps_3d_textures.GetShader(), NULL, 0);
 
-	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
 
-	//Square
-	cb_vs_vertexshader.data.xOffset = 0;
-	cb_vs_vertexshader.data.yOffset = 0.5f;
-	cb_vs_vertexshader.ApplyChanges();
+	
 
 	this->deviceContext->PSSetShaderResources(0, 1, this->myTexture.GetAddressOf());
-	this->deviceContext->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);
-	this->deviceContext->IASetIndexBuffer(indicesBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+	this->deviceContext->IASetVertexBuffers(0, 1, this->vb_texture.GetAddressOf(), this->vb_texture.Stride(), &offset);
+	this->deviceContext->IASetIndexBuffer(this->ib_texture.Get(), DXGI_FORMAT_R32_UINT, 0);
 	this->deviceContext->VSSetConstantBuffers(0, 1, this->cb_vs_vertexshader.GetAddressOf());
-	this->deviceContext->DrawIndexed(6, 0, 0);
-	
-	//Draw Text
-	this->spriteBatch->Begin();
-	this->spriteFont->DrawString(this->spriteBatch.get(), L"HELLO WORLD", DirectX::XMFLOAT2(0, 0), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f,0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
-	this->spriteBatch->End();
+	this->deviceContext->DrawIndexed(this->ib_texture.BufferSize(), 0, 0);
+
+	this->deviceContext->IASetInputLayout(this->vs_3d_colors.GetInputLayout());
+	this->deviceContext->VSSetShader(vs_3d_colors.GetShader(), NULL, 0);
+	this->deviceContext->PSSetShader(ps_3d_colors.GetShader(), NULL, 0);
+	this->deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_LINELIST);
+	cb_vs_vertexshader.data.wvp = XMMatrixTranslation(0, 0, 1) * camera.GetViewMatrix() * camera.GetProjectionMatrix();
+	cb_vs_vertexshader.data.wvp = XMMatrixTranspose(cb_vs_vertexshader.data.wvp);
+	cb_vs_vertexshader.ApplyChanges();
+	this->deviceContext->VSSetConstantBuffers(0, 1, this->cb_vs_vertexshader.GetAddressOf());
+
+
+	UINT stride2 = sizeof(Vertex_COLOR);
+	this->deviceContext->IASetVertexBuffers(0, 1, vb_grid.GetAddressOf(), vb_grid.Stride(), &offset);
+	this->deviceContext->Draw(this->vb_grid.BufferSize(), 0);
 
 	this->swapchain->Present(1, NULL);
 }
@@ -232,21 +239,34 @@ bool Graphics::InitializeShaders()
 	#endif
 #endif
 	}
-
-	D3D11_INPUT_ELEMENT_DESC layout[] =
+	UINT numElements;
+	D3D11_INPUT_ELEMENT_DESC inputLayout_3d_textures[] =
 	{
 		{"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
 		{"TEXCOORD", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
 	};
 
-	UINT numElements = ARRAYSIZE(layout);
+	numElements = ARRAYSIZE(inputLayout_3d_textures);
 
-	if (!vertexshader.Initialize(this->device, shaderfolder + L"vertexshader.cso", layout, numElements))
+	if (!vs_3d_textures.Initialize(this->device, shaderfolder + L"vs_3d_textures.cso", inputLayout_3d_textures, numElements))
 		return false;
 
-	if (!pixelshader.Initialize(this->device, shaderfolder + L"pixelshader.cso"))
+	if (!ps_3d_textures.Initialize(this->device, shaderfolder + L"ps_3d_textures.cso"))
 		return false;
 
+	D3D11_INPUT_ELEMENT_DESC inputLayout_3d_colors[] =
+	{
+		{"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
+		{"COLOR", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
+	};
+	numElements = ARRAYSIZE(inputLayout_3d_colors);
+
+
+	if (!vs_3d_colors.Initialize(this->device, shaderfolder + L"vs_3d_colors.cso", inputLayout_3d_colors, numElements))
+		return false;
+
+	if (!ps_3d_colors.Initialize(this->device, shaderfolder + L"ps_3d_colors.cso"))
+		return false;
 
 	return true;
 }
@@ -256,11 +276,18 @@ bool Graphics::InitializeScene()
 	//Textured Square
 	Vertex v[] =
 	{
-		Vertex(-0.5f,  -0.5f, 1.0f, 0.0f, 1.0f), //Bottom Left   - [0]
-		Vertex(-0.5f,   0.5f, 1.0f, 0.0f, 0.0f), //Top Left      - [1]
-		Vertex( 0.5f,   0.5f, 1.0f, 1.0f, 0.0f), //Top Right     - [2]
-		Vertex(0.5f,  -0.5f, 1.0f, 1.0f, 1.0f), //Bottom Right   - [3]
+		Vertex(-0.5f,  -0.5f, 0.0f, 0.0f, 1.0f), //Bottom Left   - [0]
+		Vertex(-0.5f,   0.5f, 0.0f, 0.0f, 0.0f), //Top Left      - [1]
+		Vertex( 0.5f,   0.5f, 0.0f, 1.0f, 0.0f), //Top Right     - [2]
+		Vertex(0.5f,  -0.5f, 0.0f, 1.0f, 1.0f), //Bottom Right   - [3]
 	};
+
+	HRESULT hr = this->vb_texture.Initialize(this->device.Get(), v, ARRAYSIZE(v));
+	if (FAILED(hr))
+	{
+		ErrorLogger::Log(hr, "Failed to create vertex buffer for textured square.");
+		return false;
+	}
 
 	DWORD indices[] =
 	{
@@ -268,44 +295,13 @@ bool Graphics::InitializeScene()
 		0, 2, 3
 	};
 
-	//Load Vertex Data
-	D3D11_BUFFER_DESC vertexBufferDesc;
-	ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));
-
-	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	vertexBufferDesc.ByteWidth = sizeof(Vertex) * ARRAYSIZE(v);
-	vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	vertexBufferDesc.CPUAccessFlags = 0;
-	vertexBufferDesc.MiscFlags = 0;
-
-	D3D11_SUBRESOURCE_DATA vertexBufferData;
-	ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
-	vertexBufferData.pSysMem = v;
-
-	HRESULT hr = this->device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, this->vertexBuffer.GetAddressOf());
+	hr = this->ib_texture.Initialize(this->device.Get(), indices, ARRAYSIZE(indices));
 	if (FAILED(hr))
 	{
-		ErrorLogger::Log(hr, "Failed to create vertex buffer.");
-		return false;
-	}
-
-	//Load Index Data
-	D3D11_BUFFER_DESC indexBufferDesc;
-	ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
-	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	indexBufferDesc.ByteWidth = sizeof(DWORD)*ARRAYSIZE(indices);
-	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	indexBufferDesc.CPUAccessFlags = 0;
-	indexBufferDesc.MiscFlags = 0;
-
-	D3D11_SUBRESOURCE_DATA indexBufferData;
-	indexBufferData.pSysMem = indices;
-	hr = device->CreateBuffer(&indexBufferDesc, &indexBufferData, indicesBuffer.GetAddressOf());
-	if (FAILED(hr))
-	{
-		ErrorLogger::Log(hr, "Failed to create indices buffer.");
+		ErrorLogger::Log(hr, "Failed to create indices buffer for textured square.");
 		return hr;
 	}
+	
 
 	//Load Texture
 	hr = DirectX::CreateWICTextureFromFile(this->device.Get(), L"Data\\Textures\\piano.png", nullptr, myTexture.GetAddressOf());
@@ -322,6 +318,42 @@ bool Graphics::InitializeScene()
 		ErrorLogger::Log(hr, "Failed to create constant buffer.");
 		return false;
 	}
+
+	//draw x grid
+	std::vector<Vertex_COLOR> v2;
+	float gridDimension = 25.0f;
+	int gridSections = 25;
+	//Draw -Z -> +Z (Red->White)
+	for (int i = 0; i < gridSections; i++)
+	{
+		v2.push_back(Vertex_COLOR(0.0f - gridDimension / 2 + i * gridDimension / gridSections, 0.0f, -gridDimension / 2.0f, 1.0f, 0.0f, 0.0f));
+		v2.push_back(Vertex_COLOR(0.0f - gridDimension / 2 + i * gridDimension / gridSections, 0.0f, +(gridDimension) / 2.0f - gridDimension / gridSections, 1.0f, 1.0f, 1.0f));
+	}
+	//Draw -X -> +X (Blue->White)
+	for (int i = 0; i < gridSections; i++)
+	{
+		v2.push_back(Vertex_COLOR(-gridDimension/2.0f, 0.0f, 0.0f - gridDimension / 2 + i * gridDimension / gridSections, 0.0f, 0.0f, 1.0f));
+		v2.push_back(Vertex_COLOR(+gridDimension/2.0f - gridDimension / gridSections, 0.0f, 0.0f - gridDimension / 2 + i * gridDimension / gridSections, 1.0f, 1.0f, 1.0f));
+		v2.push_back(Vertex_COLOR(-gridDimension / 2.0f, 0.0f - gridDimension / 2 + i * gridDimension / gridSections, 0.0f, 0.0f, 0.0f, 1.0f));
+		v2.push_back(Vertex_COLOR(+gridDimension / 2.0f - gridDimension / gridSections, 0.0f - gridDimension / 2 + i * gridDimension / gridSections, 0.0f, 1.0f, 1.0f, 1.0f));
+	}
+	//Draw -Y -> +Y (Green->White)
+	for (int i = 0; i < gridSections; i++)
+	{
+		v2.push_back(Vertex_COLOR(0.0f - gridDimension / 2 + i * gridDimension / gridSections, -gridDimension/2.0f, 0.0f, 0.0f, 1.0f, 0.0f));
+		v2.push_back(Vertex_COLOR(0.0f - gridDimension / 2 + i * gridDimension / gridSections, +gridDimension / 2.0f - gridDimension / gridSections, 0.0f, 1.0f, 1.0f, 1.0f));
+	}
+
+	hr = vb_grid.Initialize(this->device.Get(), v2.data(), v2.size());
+	if (FAILED(hr))
+	{
+		ErrorLogger::Log(hr, "Failed to create vertex buffer.");
+		return false;
+	}
+
+
+	camera.SetProjectionValues(90, windowWidth, windowHeight, 1.0f, 1000.0f);
+	camera.SetPosition(0.0f, 0.0f, -1.0f);
 
 	return true;
 }

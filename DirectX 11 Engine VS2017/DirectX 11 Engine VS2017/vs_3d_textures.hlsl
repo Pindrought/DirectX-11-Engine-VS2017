@@ -1,6 +1,6 @@
 cbuffer cbPerVertex : register(b0)
 {
-    float2 offset;
+    float4x4 wvp;
 }
 
 struct VS_INPUT
@@ -18,9 +18,7 @@ struct VS_OUTPUT
 VS_OUTPUT main(VS_INPUT input) 
 {
     VS_OUTPUT output;
-    input.inPos.x += offset.x;
-    input.inPos.y += offset.y;
-    output.outPosition = float4(input.inPos, 1.0f);
+    output.outPosition = mul(float4(input.inPos, 1.0f), wvp);
     output.outTexCoord = input.inTexCoord;
     return output;
 }
