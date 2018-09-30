@@ -1,4 +1,4 @@
-//Tutorial 26 Solution 2018-09-30
+//Tutorial 26 Solution 2018-09-30 [Same as tutorial 25 solution]
 #include "Engine.h"
 
 
