@@ -3,7 +3,7 @@ cbuffer mycBuffer : register(b0)
     float xOffset;
     float yOffset;
 };
-
+ 
 struct VS_INPUT
 {
     float3 inPos : POSITION;
