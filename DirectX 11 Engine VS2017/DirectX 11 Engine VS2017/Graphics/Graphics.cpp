@@ -248,7 +248,7 @@ void Graphics::RenderFrame()
 					std::stringstream ss;
 					streamsize width = 10;
 					ss.precision(3);
-					ss << "[" << setw(width) << mat.r[j].m128_f32[0] << "," << setw(width) << mat.r[j].m128_f32[1] << setw(width) << mat.r[j].m128_f32[2] << "," << setw(width) << mat.r[j].m128_f32[3] << "]";
+					ss << "[" << setw(width) << mat.r[j].m128_f32[0] << "," << setw(width) << mat.r[j].m128_f32[1] << "," << setw(width) << mat.r[j].m128_f32[2] << "," << setw(width) << mat.r[j].m128_f32[3] << "]";
 					ImGui::Text(ss.str().c_str());
 				}
 			}
@@ -263,7 +263,7 @@ void Graphics::RenderFrame()
 				std::stringstream ss;
 				streamsize width = 10;
 				ss.precision(3);
-				ss << "[" << setw(width) << finalMat.r[j].m128_f32[0] << "," << setw(width) << finalMat.r[j].m128_f32[1] << setw(width) << finalMat.r[j].m128_f32[2] << "," << setw(width) << finalMat.r[j].m128_f32[3] << "]";
+				ss << "[" << setw(width) << finalMat.r[j].m128_f32[0] << "," << setw(width) << finalMat.r[j].m128_f32[1] << "," << setw(width) << finalMat.r[j].m128_f32[2] << "," << setw(width) << finalMat.r[j].m128_f32[3] << "]";
 				ImGui::Text(ss.str().c_str());
 			}
 		}
