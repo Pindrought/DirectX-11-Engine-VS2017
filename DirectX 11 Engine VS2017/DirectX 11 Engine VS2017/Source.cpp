@@ -1,4 +1,4 @@
-//Dev Branch
+//Matrices Demo
 #include "Engine.h"
 
 
@@ -16,7 +16,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 
 	Engine engine;
-	if (engine.Initialize(hInstance, "Title", "MyWindowClass", 800, 600))
+	if (engine.Initialize(hInstance, "Title", "MyWindowClass", 1920, 1080))
 	{
 		while (engine.ProcessMessages() == true)
 		{

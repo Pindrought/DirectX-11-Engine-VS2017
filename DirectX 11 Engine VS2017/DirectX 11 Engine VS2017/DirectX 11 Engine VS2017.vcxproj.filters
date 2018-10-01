@@ -31,6 +31,12 @@
     <Filter Include="Source Files\Graphics">
       <UniqueIdentifier>{35538486-24d6-460c-beed-6ff66377616a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Graphics\ImGUI">
+      <UniqueIdentifier>{42a1a815-dff4-4c00-ab01-1669333587e3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Graphics\ImGUI">
+      <UniqueIdentifier>{bd4caf4c-260c-42c2-8179-9fc325b80f63}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source.cpp">
@@ -74,6 +80,21 @@
     </ClCompile>
     <ClCompile Include="Graphics\Camera.cpp">
       <Filter>Source Files\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\imgui.cpp">
+      <Filter>Source Files\Graphics\ImGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\imgui_draw.cpp">
+      <Filter>Source Files\Graphics\ImGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\imgui_impl_dx11.cpp">
+      <Filter>Source Files\Graphics\ImGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\imgui_impl_win32.cpp">
+      <Filter>Source Files\Graphics\ImGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\imgui_widgets.cpp">
+      <Filter>Source Files\Graphics\ImGUI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -130,6 +151,18 @@
     </ClInclude>
     <ClInclude Include="Graphics\IndexBuffer.h">
       <Filter>Header Files\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\imgui.h">
+      <Filter>Header Files\Graphics\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\imgui_impl_dx11.h">
+      <Filter>Header Files\Graphics\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\imgui_impl_win32.h">
+      <Filter>Header Files\Graphics\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\imgui_internal.h">
+      <Filter>Header Files\Graphics\ImGUI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

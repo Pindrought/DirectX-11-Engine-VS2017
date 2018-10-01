@@ -1,4 +1,6 @@
 #include "Graphics.h"
+#include <sstream>
+#include <iomanip>
 
 bool Graphics::Initialize(HWND hwnd, int width, int height)
 {
@@ -16,6 +18,33 @@ bool Graphics::Initialize(HWND hwnd, int width, int height)
 	return true;
 }
 
+struct MatrixProjection
+{
+	enum MatrixType
+	{
+		RotationRollPitchYaw,
+		Translation,
+		Scale
+	};
+
+	MatrixProjection(MatrixType mtype)
+		:type(mtype)
+	{
+		switch (mtype)
+		{
+		case MatrixType::Scale:
+		{
+			values[0] = 1;
+			values[1] = 1;
+			values[2] = 1;
+			break;
+		}
+		}
+	}
+	MatrixType type;
+	float values[3] = { 0,0,0 };
+};
+
 void Graphics::RenderFrame()
 {
 	float bgcolor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -31,8 +60,34 @@ void Graphics::RenderFrame()
 	this->deviceContext->PSSetShader(ps_3d_textures.GetShader(), NULL, 0);
 
 	UINT offset = 0;
-
+	static float rotRoll(0), rotPitch(0), rotYaw(0);
+	static std::vector<MatrixProjection> matrices;
 	
+	cb_vs_vertexshader.data.wvp = XMMatrixIdentity();
+
+	for (int i = 0; i < matrices.size(); i++)
+	{
+		switch (matrices[i].type)
+		{
+		case MatrixProjection::Scale:
+			cb_vs_vertexshader.data.wvp = cb_vs_vertexshader.data.wvp * XMMatrixScaling(matrices[i].values[0], matrices[i].values[1], matrices[i].values[2]);
+			break;
+		case MatrixProjection::RotationRollPitchYaw:
+			cb_vs_vertexshader.data.wvp = cb_vs_vertexshader.data.wvp * XMMatrixRotationRollPitchYaw(matrices[i].values[0], matrices[i].values[1], matrices[i].values[2]);
+			break;
+		case MatrixProjection::Translation:
+			cb_vs_vertexshader.data.wvp = cb_vs_vertexshader.data.wvp * XMMatrixTranslation(matrices[i].values[0], matrices[i].values[1], matrices[i].values[2]);
+			break;
+		}
+	}
+
+	XMMATRIX finalMat = cb_vs_vertexshader.data.wvp;
+
+
+	cb_vs_vertexshader.data.wvp = cb_vs_vertexshader.data.wvp * camera.GetViewMatrix() * camera.GetProjectionMatrix();
+	cb_vs_vertexshader.data.wvp = XMMatrixTranspose(cb_vs_vertexshader.data.wvp);
+
+	cb_vs_vertexshader.ApplyChanges();
 
 	this->deviceContext->PSSetShaderResources(0, 1, this->myTexture.GetAddressOf());
 	this->deviceContext->IASetVertexBuffers(0, 1, this->vb_texture.GetAddressOf(), this->vb_texture.Stride(), &offset);
@@ -44,7 +99,7 @@ void Graphics::RenderFrame()
 	this->deviceContext->VSSetShader(vs_3d_colors.GetShader(), NULL, 0);
 	this->deviceContext->PSSetShader(ps_3d_colors.GetShader(), NULL, 0);
 	this->deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_LINELIST);
-	cb_vs_vertexshader.data.wvp = XMMatrixTranslation(0, 0, 1) * camera.GetViewMatrix() * camera.GetProjectionMatrix();
+	cb_vs_vertexshader.data.wvp = camera.GetViewMatrix() * camera.GetProjectionMatrix();
 	cb_vs_vertexshader.data.wvp = XMMatrixTranspose(cb_vs_vertexshader.data.wvp);
 	cb_vs_vertexshader.ApplyChanges();
 	this->deviceContext->VSSetConstantBuffers(0, 1, this->cb_vs_vertexshader.GetAddressOf());
@@ -52,7 +107,174 @@ void Graphics::RenderFrame()
 
 	UINT stride2 = sizeof(Vertex_COLOR);
 	this->deviceContext->IASetVertexBuffers(0, 1, vb_grid.GetAddressOf(), vb_grid.Stride(), &offset);
-	this->deviceContext->Draw(this->vb_grid.BufferSize(), 0);
+	
+	static bool renderXYaxis = true;
+	static bool renderXZaxis = true;
+	
+	if (renderXZaxis)
+		this->deviceContext->Draw(this->vb_grid.BufferSize()/2, 0);
+	if (renderXYaxis)
+		this->deviceContext->Draw(this->vb_grid.BufferSize() / 2, this->vb_grid.BufferSize() / 2);
+
+	ImGui_ImplDX11_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+
+
+	// 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
+	{
+		static bool detailed_matrix_info = false;
+		static bool display_final_matrix = false;
+		static int counter = 0;
+		static float clear_color[3];
+
+		ImGui::Begin("Debugging Window");                      
+
+
+		ImGui::Text("Matrix Visual Demo by Jpres.");               // Display some text (you can use a format strings too)
+		ImGui::Checkbox("Render X-Y Axis", &renderXYaxis);
+		ImGui::Checkbox("Render X-Z Axis", &renderXZaxis);
+
+
+		if (ImGui::Button("Reset Matrices"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+		{
+			for (int i = 0; i < matrices.size(); i++)
+			{
+				if (matrices[i].type == MatrixProjection::Scale)
+				{
+					matrices[i].values[0] = 1.0f;
+					matrices[i].values[1] = 1.0f;
+					matrices[i].values[2] = 1.0f;
+				}
+				else
+				{
+					matrices[i].values[0] = 0.0f;
+					matrices[i].values[1] = 0.0f;
+					matrices[i].values[2] = 0.0f;
+				}
+			}
+		}
+		ImGui::SameLine();
+
+
+		if (ImGui::Button("Clear Matrices"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+			matrices.clear();
+
+		ImGui::SameLine();
+		if (ImGui::Button("Add Scaling Matrix"))                            
+			matrices.push_back(MatrixProjection(MatrixProjection::Scale));
+		ImGui::SameLine();
+
+		if (ImGui::Button("Add Rotation Matrix"))
+			matrices.push_back(MatrixProjection(MatrixProjection::RotationRollPitchYaw));
+		ImGui::SameLine();
+
+		if (ImGui::Button("Add Translation Matrix"))
+			matrices.push_back(MatrixProjection(MatrixProjection::Translation));
+
+		
+		ImGui::Checkbox("Detailed Matrix Info", &detailed_matrix_info);
+		if (detailed_matrix_info)
+			ImGui::Checkbox("Display Final Matrix", &display_final_matrix);
+
+
+		ImGui::NewLine();
+		ImGui::NewLine();
+		for (int i = 0; i < matrices.size(); i++)
+		{
+			switch (matrices[i].type)
+			{
+			case MatrixProjection::Scale:
+			{
+				std::string name = "Scale X/Y/Z [" + std::to_string(i) + "]";
+				ImGui::DragFloat3(name.c_str(), matrices[i].values, 0.1f, 0.0f, 5.0f);
+				ImGui::SameLine();
+				std::string removename = "Remove [" + std::to_string(i) + "]";
+				if (ImGui::Button(removename.c_str()))
+				{
+					matrices.erase(matrices.begin() + i);
+					i -= 1;
+					continue;
+				}
+				break;
+			}
+			case MatrixProjection::RotationRollPitchYaw:
+			{
+				std::string name = "Rotation Pitch/Yaw/Roll [" + std::to_string(i) + "]";
+				ImGui::DragFloat3(name.c_str(), matrices[i].values, 0.1f, -XM_2PI, XM_2PI);
+				ImGui::SameLine();
+				std::string removename = "Remove [" + std::to_string(i) + "]";
+				if (ImGui::Button(removename.c_str()))
+				{
+					matrices.erase(matrices.begin() + i);
+					i -= 1;
+					continue;
+				}
+				break;
+			}
+			case MatrixProjection::Translation:
+			{
+				std::string name = "Translation X/Y/Z [" + std::to_string(i) + "]";
+				ImGui::DragFloat3(name.c_str(), matrices[i].values, 0.1f, -20.0f, 20.0f);
+				ImGui::SameLine();
+				std::string removename = "Remove [" + std::to_string(i) + "]";
+				if (ImGui::Button(removename.c_str()))
+				{
+					matrices.erase(matrices.begin() + i);
+					i -= 1;
+					continue;
+				}
+				break;
+			}
+			}
+			if (detailed_matrix_info)
+			{
+				using namespace std;
+				DirectX::XMMATRIX mat;
+				switch (matrices[i].type)
+				{
+				case MatrixProjection::Scale:
+					mat = XMMatrixScaling(matrices[i].values[0], matrices[i].values[1], matrices[i].values[2]);
+					break;
+				case MatrixProjection::RotationRollPitchYaw:
+					mat = XMMatrixRotationRollPitchYaw(matrices[i].values[0], matrices[i].values[1], matrices[i].values[2]);
+					break;
+				case MatrixProjection::Translation:
+					mat = XMMatrixTranslation(matrices[i].values[0], matrices[i].values[1], matrices[i].values[2]);
+					break;
+				}
+				for (int j = 0; j < 4; j++)
+				{
+					std::stringstream ss;
+					streamsize width = 10;
+					ss.precision(3);
+					ss << "[" << setw(width) << mat.r[j].m128_f32[0] << "," << setw(width) << mat.r[j].m128_f32[1] << setw(width) << mat.r[j].m128_f32[2] << "," << setw(width) << mat.r[j].m128_f32[3] << "]";
+					ImGui::Text(ss.str().c_str());
+				}
+			}
+		}
+
+		if (display_final_matrix && detailed_matrix_info)
+		{
+			ImGui::Text("Final Matrix");
+			using namespace std;
+			for (int j = 0; j < 4; j++)
+			{
+				std::stringstream ss;
+				streamsize width = 10;
+				ss.precision(3);
+				ss << "[" << setw(width) << finalMat.r[j].m128_f32[0] << "," << setw(width) << finalMat.r[j].m128_f32[1] << setw(width) << finalMat.r[j].m128_f32[2] << "," << setw(width) << finalMat.r[j].m128_f32[3] << "]";
+				ImGui::Text(ss.str().c_str());
+			}
+		}
+
+		ImGui::NewLine();
+		ImGui::NewLine();
+		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		ImGui::End();
+	}
+	ImGui::Render();
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
 	this->swapchain->Present(1, NULL);
 }
@@ -215,6 +437,15 @@ bool Graphics::InitializeDirectX(HWND hwnd, int width, int height)
 		return false;
 	}
 
+
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+
+	ImGui_ImplWin32_Init(hwnd);
+	ImGui_ImplDX11_Init(this->device.Get(), this->deviceContext.Get());
+	ImGui::StyleColorsDark();
+
 	return true;
 }
 
@@ -276,10 +507,16 @@ bool Graphics::InitializeScene()
 	//Textured Square
 	Vertex v[] =
 	{
+		//Front
 		Vertex(-0.5f,  -0.5f, 0.0f, 0.0f, 1.0f), //Bottom Left   - [0]
 		Vertex(-0.5f,   0.5f, 0.0f, 0.0f, 0.0f), //Top Left      - [1]
-		Vertex( 0.5f,   0.5f, 0.0f, 1.0f, 0.0f), //Top Right     - [2]
-		Vertex(0.5f,  -0.5f, 0.0f, 1.0f, 1.0f), //Bottom Right   - [3]
+		Vertex( 0.5f,   0.5f, 0.0f, 0.5f, 0.0f), //Top Right     - [2]
+		Vertex(0.5f,  -0.5f, 0.0f, 0.5f, 1.0f), //Bottom Right   - [3]
+		//Back
+		Vertex(0.5f,  -0.5f, 0.0f, 0.5f, 1.0f), //Bottom Left   - [4]
+		Vertex(0.5f,   0.5f, 0.0f, 0.5f, 0.0f), //Top Left      - [5]
+		Vertex(-0.5f,   0.5f, 0.0f, 1.0f, 0.0f), //Top Right     - [6]
+		Vertex(-0.5f,  -0.5f, 0.0f, 1.0f, 1.0f), //Bottom Right   - [7]
 	};
 
 	HRESULT hr = this->vb_texture.Initialize(this->device.Get(), v, ARRAYSIZE(v));
@@ -292,7 +529,9 @@ bool Graphics::InitializeScene()
 	DWORD indices[] =
 	{
 		0, 1, 2,
-		0, 2, 3
+		0, 2, 3,
+		4, 5, 6,
+		4, 6, 7
 	};
 
 	hr = this->ib_texture.Initialize(this->device.Get(), indices, ARRAYSIZE(indices));
@@ -304,7 +543,7 @@ bool Graphics::InitializeScene()
 	
 
 	//Load Texture
-	hr = DirectX::CreateWICTextureFromFile(this->device.Get(), L"Data\\Textures\\piano.png", nullptr, myTexture.GetAddressOf());
+	hr = DirectX::CreateWICTextureFromFile(this->device.Get(), L"Data\\Textures\\pianofrontback.png", nullptr, myTexture.GetAddressOf());
 	if (FAILED(hr))
 	{
 		ErrorLogger::Log(hr, "Failed to create wic texture from file.");
@@ -323,21 +562,25 @@ bool Graphics::InitializeScene()
 	std::vector<Vertex_COLOR> v2;
 	float gridDimension = 25.0f;
 	int gridSections = 25;
-	//Draw -Z -> +Z (Red->White)
+	//Draw -Z -> +Z (Red->White) //[X-Z Axis]
 	for (int i = 0; i < gridSections; i++)
 	{
 		v2.push_back(Vertex_COLOR(0.0f - gridDimension / 2 + i * gridDimension / gridSections, 0.0f, -gridDimension / 2.0f, 1.0f, 0.0f, 0.0f));
 		v2.push_back(Vertex_COLOR(0.0f - gridDimension / 2 + i * gridDimension / gridSections, 0.0f, +(gridDimension) / 2.0f - gridDimension / gridSections, 1.0f, 1.0f, 1.0f));
 	}
-	//Draw -X -> +X (Blue->White)
+	//Draw -X -> +X (Blue->White)  //[X-Z Axis]
 	for (int i = 0; i < gridSections; i++)
 	{
 		v2.push_back(Vertex_COLOR(-gridDimension/2.0f, 0.0f, 0.0f - gridDimension / 2 + i * gridDimension / gridSections, 0.0f, 0.0f, 1.0f));
 		v2.push_back(Vertex_COLOR(+gridDimension/2.0f - gridDimension / gridSections, 0.0f, 0.0f - gridDimension / 2 + i * gridDimension / gridSections, 1.0f, 1.0f, 1.0f));
+	}
+	//Draw -X -> +X (Blue->White) //[X-Y Axis]
+	for (int i = 0; i < gridSections; i++)
+	{
 		v2.push_back(Vertex_COLOR(-gridDimension / 2.0f, 0.0f - gridDimension / 2 + i * gridDimension / gridSections, 0.0f, 0.0f, 0.0f, 1.0f));
 		v2.push_back(Vertex_COLOR(+gridDimension / 2.0f - gridDimension / gridSections, 0.0f - gridDimension / 2 + i * gridDimension / gridSections, 0.0f, 1.0f, 1.0f, 1.0f));
 	}
-	//Draw -Y -> +Y (Green->White)
+	//Draw -Y -> +Y (Green->White) //[X-Y Axis]
 	for (int i = 0; i < gridSections; i++)
 	{
 		v2.push_back(Vertex_COLOR(0.0f - gridDimension / 2 + i * gridDimension / gridSections, -gridDimension/2.0f, 0.0f, 0.0f, 1.0f, 0.0f));
@@ -354,6 +597,7 @@ bool Graphics::InitializeScene()
 
 	camera.SetProjectionValues(90, windowWidth, windowHeight, 1.0f, 1000.0f);
 	camera.SetPosition(0.0f, 0.0f, -1.0f);
+	ImGui::SetNextWindowSize(ImVec2(1000, 400));
 
 	return true;
 }

@@ -58,6 +58,7 @@ public:
 		}
 		CopyMemory(mappedResource.pData, &data, sizeof(T));
 		this->deviceContext->Unmap(buffer.Get(), 0);
+		return true;
 	}
 };
 
