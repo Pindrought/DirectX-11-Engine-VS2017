@@ -31,8 +31,9 @@ void Graphics::RenderFrame()
 	UINT offset = 0;
 
 	//Update Constant Buffer
-	constantBuffer.data.xOffset = 0.0f;
-	constantBuffer.data.yOffset = 0.5f;
+	constantBuffer.data.mat = DirectX::XMMatrixScaling(0.5f, 0.5f, 1.0f) * DirectX::XMMatrixScaling(0.5f, 0.5f, 1.0f);
+	constantBuffer.data.mat = DirectX::XMMatrixTranspose(constantBuffer.data.mat);
+
 	if (!constantBuffer.ApplyChanges())
 		return;
 	this->deviceContext->VSSetConstantBuffers(0, 1, this->constantBuffer.GetAddressOf());
