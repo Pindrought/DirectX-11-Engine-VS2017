@@ -47,10 +47,13 @@ struct MatrixProjection
 
 void Graphics::RenderFrame()
 {
-	float bgcolor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	this->deviceContext->ClearRenderTargetView(this->renderTargetView.Get(), bgcolor);
-	this->deviceContext->ClearDepthStencilView(this->depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	static bool seeThroughCameraLens = false;
 
+	Camera renderCam = camera;
+
+
+	float bgcolor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	
 	this->deviceContext->IASetInputLayout(this->vs_3d_textures.GetInputLayout());
 	this->deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	this->deviceContext->RSSetState(this->rasterizerState.Get());
@@ -58,6 +61,9 @@ void Graphics::RenderFrame()
 	this->deviceContext->PSSetSamplers(0, 1, this->samplerState.GetAddressOf());
 	this->deviceContext->VSSetShader(vs_3d_textures.GetShader(), NULL, 0);
 	this->deviceContext->PSSetShader(ps_3d_textures.GetShader(), NULL, 0);
+	this->deviceContext->ClearRenderTargetView(this->renderTargetView.Get(), bgcolor);
+	this->deviceContext->ClearDepthStencilView(this->depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
 
 	UINT offset = 0;
 	static float rotRoll(0), rotPitch(0), rotYaw(0);
@@ -82,24 +88,89 @@ void Graphics::RenderFrame()
 	}
 
 	XMMATRIX finalMat = cb_vs_vertexshader.data.wvp;
+	static float eyePos[3] = { 0.0f, 0.0f, -2.0f };
+	static float lookatPos[3] = { 0.0f, 0.0f, 1.0f };
 
+	if (eyePos[0] == lookatPos[0] && eyePos[1] == lookatPos[1] && eyePos[2] == lookatPos[2])
+	{
+		eyePos[2] -= 1.0f;
+	}
 
-	cb_vs_vertexshader.data.wvp = cb_vs_vertexshader.data.wvp * camera.GetViewMatrix() * camera.GetProjectionMatrix();
-	cb_vs_vertexshader.data.wvp = XMMatrixTranspose(cb_vs_vertexshader.data.wvp);
+	static float upVector[3] = { 0.0f, 1.0f, 0.0f };
+	if (upVector[0] == 0 && upVector[1] == 0 && upVector[2] == 0)
+	{
+		upVector[1] = 0.1f;
+	}
+	XMMATRIX camTranslationOffset = XMMatrixTranslation(-eyePos[0], -eyePos[1], -eyePos[2]);
+	XMVECTOR eyePosVec = { eyePos[0], eyePos[1], eyePos[2], 0.0f };
+	XMVECTOR lookatVec = { lookatPos[0], lookatPos[1], lookatPos[2], 1.0f };
+	XMVECTOR upVectorVec = { upVector[0], upVector[1], upVector[2], 1.0f };
+	XMMATRIX camViewMatrix = XMMatrixLookAtLH(eyePosVec, lookatVec, upVectorVec);
 
-	cb_vs_vertexshader.ApplyChanges();
+	
 
-	this->deviceContext->PSSetShaderResources(0, 1, this->myTexture.GetAddressOf());
-	this->deviceContext->IASetVertexBuffers(0, 1, this->vb_texture.GetAddressOf(), this->vb_texture.Stride(), &offset);
-	this->deviceContext->IASetIndexBuffer(this->ib_texture.Get(), DXGI_FORMAT_R32_UINT, 0);
-	this->deviceContext->VSSetConstantBuffers(0, 1, this->cb_vs_vertexshader.GetAddressOf());
-	this->deviceContext->DrawIndexed(this->ib_texture.BufferSize(), 0, 0);
+	static float FOV = 90.0f;
+	float fovRadians = FOV / 180 * 3.14;
+	float aspectRatio = (float)windowWidth / (float)windowHeight;
+	static float nearZ = 1.0f;
+	static float farZ = 1000.0f;
+
+	Camera lensCam;
+	lensCam.SetProjectionValues(FOV, windowWidth, windowHeight, nearZ, farZ);
+	lensCam.SetViewMatrix(camViewMatrix);
+	if (seeThroughCameraLens)
+	{
+		renderCam = lensCam;
+	}
+
+	static bool drawFrustum = false;
+	if (seeThroughCameraLens == false && drawFrustum == true)
+	{
+		this->deviceContext->RSSetState(this->rasterizerState_noCull.Get());
+
+		float nearHeight = 2 * tan(fovRadians / 2) * nearZ;
+		float farHeight = 2 * tan(fovRadians / 2) * farZ;
+		float nearWidth = nearHeight * aspectRatio;
+		float farWidth = farHeight * aspectRatio;
+		std::vector<Vertex_COLOR> data;
+		float alpha = 0.5f;
+		data.push_back(Vertex_COLOR((-nearWidth *0.5), (nearHeight*0.5), nearZ, 0.7f, 0.7f, 0.0f, alpha)); //Near Topleft
+		data.push_back(Vertex_COLOR((nearWidth*0.5), (nearHeight*0.5), nearZ, 0.7f, 0.7f, 0.0f, alpha)); //Near Topright
+		data.push_back(Vertex_COLOR((nearWidth*0.5), (-nearHeight *0.5), nearZ, 0.7f, 0.7f, 0.0f, alpha)); //Near Bottomright
+		data.push_back(Vertex_COLOR(-(nearWidth*0.5), (-nearHeight * 0.5), nearZ, 0.7f, 0.7f, 0.0f, alpha)); //Near Bottomleft
+		std::vector<DWORD> indices =
+		{	
+			0, 1, 2,
+			0, 2, 3,
+		};
+
+		this->vb_frustum.Initialize(this->device.Get(), data.data(), data.size());
+		this->ib_frustum.Initialize(this->device.Get(), indices.data(), indices.size());
+		cb_vs_vertexshader.data.wvp = renderCam.GetViewMatrix() * renderCam.GetProjectionMatrix();
+		cb_vs_vertexshader.data.wvp = XMMatrixTranspose(cb_vs_vertexshader.data.wvp);
+		cb_vs_vertexshader.ApplyChanges();
+		this->deviceContext->VSSetConstantBuffers(0, 1, this->cb_vs_vertexshader.GetAddressOf());
+		this->deviceContext->IASetVertexBuffers(0, 1, this->vb_frustum.GetAddressOf(), this->vb_frustum.Stride(), &offset);
+		this->deviceContext->IASetIndexBuffer(ib_frustum.Get(), DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);
+		this->deviceContext->DrawIndexed(indices.size(), 0, 0);
+		this->deviceContext->RSSetState(this->rasterizerState.Get());
+
+	}
+
+	if (seeThroughCameraLens == false)
+	{
+		XMMATRIX camMatrix = XMMatrixRotationRollPitchYaw(-XM_PIDIV2, 0, 0) * XMMatrixScaling(0.5f, 0.5f, 0.5f) * XMMatrixTranslation(0.25f, 0.2f, -1.0f);
+		this->camera_model->Draw(this->deviceContext.Get(), *states, camMatrix, camera.GetViewMatrix(), camera.GetProjectionMatrix());
+	}
 
 	this->deviceContext->IASetInputLayout(this->vs_3d_colors.GetInputLayout());
 	this->deviceContext->VSSetShader(vs_3d_colors.GetShader(), NULL, 0);
 	this->deviceContext->PSSetShader(ps_3d_colors.GetShader(), NULL, 0);
 	this->deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_LINELIST);
-	cb_vs_vertexshader.data.wvp = camera.GetViewMatrix() * camera.GetProjectionMatrix();
+	if (seeThroughCameraLens)
+		cb_vs_vertexshader.data.wvp = renderCam.GetViewMatrix() * renderCam.GetProjectionMatrix();
+	else
+		cb_vs_vertexshader.data.wvp = camViewMatrix * renderCam.GetViewMatrix() * renderCam.GetProjectionMatrix();
 	cb_vs_vertexshader.data.wvp = XMMatrixTranspose(cb_vs_vertexshader.data.wvp);
 	cb_vs_vertexshader.ApplyChanges();
 	this->deviceContext->VSSetConstantBuffers(0, 1, this->cb_vs_vertexshader.GetAddressOf());
@@ -116,10 +187,30 @@ void Graphics::RenderFrame()
 	if (renderXYaxis)
 		this->deviceContext->Draw(this->vb_grid.BufferSize() / 2, this->vb_grid.BufferSize() / 2);
 
+
+
+	if (seeThroughCameraLens)
+		cb_vs_vertexshader.data.wvp = finalMat * renderCam.GetViewMatrix() * renderCam.GetProjectionMatrix();
+	else
+		cb_vs_vertexshader.data.wvp = finalMat * camViewMatrix * renderCam.GetViewMatrix() * renderCam.GetProjectionMatrix();
+	cb_vs_vertexshader.data.wvp = XMMatrixTranspose(cb_vs_vertexshader.data.wvp);
+	cb_vs_vertexshader.ApplyChanges();
+
+
+	this->deviceContext->VSSetShader(vs_3d_textures.GetShader(), NULL, 0);
+	this->deviceContext->PSSetShader(ps_3d_textures.GetShader(), NULL, 0);
+	this->deviceContext->IASetInputLayout(this->vs_3d_textures.GetInputLayout());
+	this->deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	this->deviceContext->PSSetShaderResources(0, 1, this->myTexture.GetAddressOf());
+	this->deviceContext->IASetVertexBuffers(0, 1, this->vb_texture.GetAddressOf(), this->vb_texture.Stride(), &offset);
+	this->deviceContext->IASetIndexBuffer(this->ib_texture.Get(), DXGI_FORMAT_R32_UINT, 0);
+	this->deviceContext->VSSetConstantBuffers(0, 1, this->cb_vs_vertexshader.GetAddressOf());
+	this->deviceContext->DrawIndexed(this->ib_texture.BufferSize(), 0, 0);
+
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
-
 
 	// 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
 	{
@@ -128,8 +219,27 @@ void Graphics::RenderFrame()
 		static int counter = 0;
 		static float clear_color[3];
 
-		ImGui::Begin("Debugging Window");                      
 
+		ImGui::Begin("Camera Window");
+
+		ImGui::Text("View Matrix Fields.");               // Display some text (you can use a format strings too)
+		ImGui::Checkbox("Draw Camera Viewing Frustum", &drawFrustum);
+
+		ImGui::Checkbox("Use Virtual Camera Lens", &seeThroughCameraLens);
+
+		ImGui::DragFloat3("Eye Pos X/Y/Z", eyePos, 0.1f, -25.0f, 25.0f);
+		ImGui::DragFloat3("Lookat Pos X/Y/Z", lookatPos, 0.1f, -25.0f, 25.0f);
+		ImGui::DragFloat3("Up Vector X/Y/Z", upVector, 0.1f, -25.0f, 25.0f);
+		ImGui::NewLine();
+		ImGui::NewLine();
+		ImGui::Text("Projection Matrix Fields.");
+
+		ImGui::Text("Aspect Ratio = Width/Height [Locked]");
+
+		ImGui::End();
+
+
+		ImGui::Begin("Movable Object Window");                      
 
 		ImGui::Text("Matrix Visual Demo by Jpres.");               // Display some text (you can use a format strings too)
 		ImGui::Checkbox("Render X-Y Axis", &renderXYaxis);
@@ -243,29 +353,14 @@ void Graphics::RenderFrame()
 					mat = XMMatrixTranslation(matrices[i].values[0], matrices[i].values[1], matrices[i].values[2]);
 					break;
 				}
-				for (int j = 0; j < 4; j++)
-				{
-					std::stringstream ss;
-					streamsize width = 10;
-					ss.precision(3);
-					ss << "[" << setw(width) << mat.r[j].m128_f32[0] << "," << setw(width) << mat.r[j].m128_f32[1] << "," << setw(width) << mat.r[j].m128_f32[2] << "," << setw(width) << mat.r[j].m128_f32[3] << "]";
-					ImGui::Text(ss.str().c_str());
-				}
+				DisplayMatrix(mat);
 			}
 		}
 
 		if (display_final_matrix && detailed_matrix_info)
 		{
 			ImGui::Text("Final Matrix");
-			using namespace std;
-			for (int j = 0; j < 4; j++)
-			{
-				std::stringstream ss;
-				streamsize width = 10;
-				ss.precision(3);
-				ss << "[" << setw(width) << finalMat.r[j].m128_f32[0] << "," << setw(width) << finalMat.r[j].m128_f32[1] << "," << setw(width) << finalMat.r[j].m128_f32[2] << "," << setw(width) << finalMat.r[j].m128_f32[3] << "]";
-				ImGui::Text(ss.str().c_str());
-			}
+			DisplayMatrix(finalMat);
 		}
 
 		ImGui::NewLine();
@@ -410,7 +505,22 @@ bool Graphics::InitializeDirectX(HWND hwnd, int width, int height)
 
 	rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
 	rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
+	rasterizerDesc.DepthClipEnable = TRUE;
+
 	hr = this->device->CreateRasterizerState(&rasterizerDesc, this->rasterizerState.GetAddressOf());
+	if (FAILED(hr))
+	{
+		ErrorLogger::Log(hr, "Failed to create rasterizer state.");
+		return false;
+	}
+
+	ZeroMemory(&rasterizerDesc, sizeof(D3D11_RASTERIZER_DESC));
+
+	rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
+	rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
+	rasterizerDesc.DepthClipEnable = TRUE;
+
+	hr = this->device->CreateRasterizerState(&rasterizerDesc, this->rasterizerState_noCull.GetAddressOf());
 	if (FAILED(hr))
 	{
 		ErrorLogger::Log(hr, "Failed to create rasterizer state.");
@@ -595,9 +705,28 @@ bool Graphics::InitializeScene()
 	}
 
 
-	camera.SetProjectionValues(90, windowWidth, windowHeight, 1.0f, 1000.0f);
-	camera.SetPosition(0.0f, 0.0f, -1.0f);
+	camera.SetProjectionValues(90, windowWidth, windowHeight, 0.1f, 1000.0f);
+	camera.SetPosition(0.0f, 0.0f, 0.0f);
 	ImGui::SetNextWindowSize(ImVec2(1000, 400));
 
+
+	states = std::make_unique<CommonStates>(this->device.Get());
+
+	effectFactory = std::make_unique<EffectFactory>(this->device.Get());
+
+	camera_model = DirectX::Model::CreateFromSDKMESH(this->device.Get(), L"Data\\Meshes\\camera.sdkmesh", *effectFactory, true);
+
 	return true;
+}
+
+void Graphics::DisplayMatrix(const XMMATRIX mat)
+{
+	for (int j = 0; j < 4; j++)
+	{
+		std::stringstream ss;
+		std::streamsize width = 10;
+		ss.precision(3);
+		ss << "[" << std::setw(width) << mat.r[j].m128_f32[0] << "," << std::setw(width) << mat.r[j].m128_f32[1] << "," << std::setw(width) << mat.r[j].m128_f32[2] << "," << std::setw(width) << mat.r[j].m128_f32[3] << "]";
+		ImGui::Text(ss.str().c_str());
+	}
 }

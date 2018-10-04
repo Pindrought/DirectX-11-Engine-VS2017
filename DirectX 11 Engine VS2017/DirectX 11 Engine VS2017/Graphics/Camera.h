@@ -4,6 +4,7 @@
 #ifndef _CAMERA_H_
 #define _CAMERA_H_
 #include <DirectXMath.h>
+#include <vector>
 using namespace DirectX;
 
 class Camera
@@ -19,14 +20,20 @@ public:
 	XMVECTOR GetPosition();
 	XMFLOAT3 GetRotation();
 
+	std::vector<XMFLOAT4> GetFrustumPlanes();
 
 	const XMMATRIX GetViewMatrix();
 	const XMMATRIX GetProjectionMatrix();
 	void SetProjectionValues(float FOV, float width, float height, float nearZ, float farZ);
+	void SetViewMatrix(XMMATRIX mat);
 	const XMVECTOR & GetForwardVector();
 	const XMVECTOR & GetRightVector();
 	const XMVECTOR & GetBackwardVector();
 	const XMVECTOR & GetLeftVector();
+
+	Camera& operator=(const Camera& camera); // copy assignment
+	
+
 private:
 	void UpdateViewMatrix();
 	XMVECTOR pos;

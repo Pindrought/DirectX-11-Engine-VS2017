@@ -41,6 +41,10 @@ public:
 
 	HRESULT Initialize(ID3D11Device *device, T * data, UINT numElements)
 	{
+		if (this->buffer != nullptr)
+		{
+			this->buffer->Release();
+		}
 		this->bufferSize = numElements;
 		this->stride = std::make_unique<UINT>(sizeof(T));
 
