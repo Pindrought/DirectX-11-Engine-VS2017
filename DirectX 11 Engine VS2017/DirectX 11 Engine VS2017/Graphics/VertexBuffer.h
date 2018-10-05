@@ -13,7 +13,7 @@ private:
 
 private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> buffer;
-	std::unique_ptr<UINT> stride;
+	std::unique_ptr<UINT> stride = nullptr;
 	UINT bufferSize = 0;
 
 public:
@@ -43,10 +43,11 @@ public:
 	{
 		if (this->buffer != nullptr)
 		{
-			this->buffer->Release();
+			this->buffer.Reset();
 		}
 		this->bufferSize = numElements;
-		this->stride = std::make_unique<UINT>(sizeof(T));
+		if (this->stride.get() == nullptr)
+			this->stride = std::make_unique<UINT>(sizeof(T));
 
 		D3D11_BUFFER_DESC vertexBufferDesc;
 		ZeroMemory(&vertexBufferDesc, sizeof(vertexBufferDesc));

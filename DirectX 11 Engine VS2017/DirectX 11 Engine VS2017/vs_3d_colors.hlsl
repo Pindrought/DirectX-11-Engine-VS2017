@@ -5,7 +5,7 @@ cbuffer cbPerVertex : register(b0)
 
 struct VS_INPUT
 {
-    float3 inPos : POSITION;
+    float4 inPos : POSITION;
     float4 inColor : COLOR;
 };
 
@@ -18,7 +18,7 @@ struct VS_OUTPUT
 VS_OUTPUT main(VS_INPUT input)
 {
     VS_OUTPUT output;
-    output.outPosition = mul(float4(input.inPos, 1.0f), wvp);
+    output.outPosition = mul(input.inPos, wvp);
     output.outColor = input.inColor;
     return output;
 }

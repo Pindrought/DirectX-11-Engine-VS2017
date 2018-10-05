@@ -47,7 +47,6 @@ struct MatrixProjection
 
 void Graphics::RenderFrame()
 {
-	static bool seeThroughCameraLens = false;
 
 	Camera renderCam = camera;
 
@@ -63,7 +62,7 @@ void Graphics::RenderFrame()
 	this->deviceContext->PSSetShader(ps_3d_textures.GetShader(), NULL, 0);
 	this->deviceContext->ClearRenderTargetView(this->renderTargetView.Get(), bgcolor);
 	this->deviceContext->ClearDepthStencilView(this->depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
+	//this->deviceContext->OMSetBlendState(0, 0, 0xffffffff); //set blend state to opaque for solid objects
 
 	UINT offset = 0;
 	static float rotRoll(0), rotPitch(0), rotYaw(0);
@@ -107,13 +106,21 @@ void Graphics::RenderFrame()
 	XMVECTOR upVectorVec = { upVector[0], upVector[1], upVector[2], 1.0f };
 	XMMATRIX camViewMatrix = XMMatrixLookAtLH(eyePosVec, lookatVec, upVectorVec);
 
-	
-
 	static float FOV = 90.0f;
 	float fovRadians = FOV / 180 * 3.14;
 	float aspectRatio = (float)windowWidth / (float)windowHeight;
 	static float nearZ = 1.0f;
-	static float farZ = 1000.0f;
+	static float farZ = 10.0f;
+
+	if (farZ < nearZ)
+		farZ = nearZ + 0.1f;
+	if (farZ < 0.2f)
+		farZ = 0.2f;
+	if (nearZ < 0.1f)
+		nearZ = 0.1f;
+	if (nearZ > farZ)
+		nearZ = farZ - 0.1f;
+
 
 	Camera lensCam;
 	lensCam.SetProjectionValues(FOV, windowWidth, windowHeight, nearZ, farZ);
@@ -123,39 +130,25 @@ void Graphics::RenderFrame()
 		renderCam = lensCam;
 	}
 
-	static bool drawFrustum = false;
-	if (seeThroughCameraLens == false && drawFrustum == true)
-	{
-		this->deviceContext->RSSetState(this->rasterizerState_noCull.Get());
+	if (seeThroughCameraLens)
+		cb_vs_vertexshader.data.wvp = finalMat * renderCam.GetViewMatrix() * renderCam.GetProjectionMatrix();
+	else
+		cb_vs_vertexshader.data.wvp = finalMat * camViewMatrix * renderCam.GetViewMatrix() * renderCam.GetProjectionMatrix();
+	cb_vs_vertexshader.data.wvp = XMMatrixTranspose(cb_vs_vertexshader.data.wvp);
+	cb_vs_vertexshader.ApplyChanges();
 
-		float nearHeight = 2 * tan(fovRadians / 2) * nearZ;
-		float farHeight = 2 * tan(fovRadians / 2) * farZ;
-		float nearWidth = nearHeight * aspectRatio;
-		float farWidth = farHeight * aspectRatio;
-		std::vector<Vertex_COLOR> data;
-		float alpha = 0.5f;
-		data.push_back(Vertex_COLOR((-nearWidth *0.5), (nearHeight*0.5), nearZ, 0.7f, 0.7f, 0.0f, alpha)); //Near Topleft
-		data.push_back(Vertex_COLOR((nearWidth*0.5), (nearHeight*0.5), nearZ, 0.7f, 0.7f, 0.0f, alpha)); //Near Topright
-		data.push_back(Vertex_COLOR((nearWidth*0.5), (-nearHeight *0.5), nearZ, 0.7f, 0.7f, 0.0f, alpha)); //Near Bottomright
-		data.push_back(Vertex_COLOR(-(nearWidth*0.5), (-nearHeight * 0.5), nearZ, 0.7f, 0.7f, 0.0f, alpha)); //Near Bottomleft
-		std::vector<DWORD> indices =
-		{	
-			0, 1, 2,
-			0, 2, 3,
-		};
 
-		this->vb_frustum.Initialize(this->device.Get(), data.data(), data.size());
-		this->ib_frustum.Initialize(this->device.Get(), indices.data(), indices.size());
-		cb_vs_vertexshader.data.wvp = renderCam.GetViewMatrix() * renderCam.GetProjectionMatrix();
-		cb_vs_vertexshader.data.wvp = XMMatrixTranspose(cb_vs_vertexshader.data.wvp);
-		cb_vs_vertexshader.ApplyChanges();
-		this->deviceContext->VSSetConstantBuffers(0, 1, this->cb_vs_vertexshader.GetAddressOf());
-		this->deviceContext->IASetVertexBuffers(0, 1, this->vb_frustum.GetAddressOf(), this->vb_frustum.Stride(), &offset);
-		this->deviceContext->IASetIndexBuffer(ib_frustum.Get(), DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);
-		this->deviceContext->DrawIndexed(indices.size(), 0, 0);
-		this->deviceContext->RSSetState(this->rasterizerState.Get());
+	this->deviceContext->VSSetShader(vs_3d_textures.GetShader(), NULL, 0);
+	this->deviceContext->PSSetShader(ps_3d_textures.GetShader(), NULL, 0);
+	this->deviceContext->IASetInputLayout(this->vs_3d_textures.GetInputLayout());
+	this->deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	}
+	this->deviceContext->PSSetShaderResources(0, 1, this->myTexture.GetAddressOf());
+	this->deviceContext->IASetVertexBuffers(0, 1, this->vb_texture.GetAddressOf(), this->vb_texture.Stride(), &offset);
+	this->deviceContext->IASetIndexBuffer(this->ib_texture.Get(), DXGI_FORMAT_R32_UINT, 0);
+	this->deviceContext->VSSetConstantBuffers(0, 1, this->cb_vs_vertexshader.GetAddressOf());
+	this->deviceContext->DrawIndexed(this->ib_texture.BufferSize(), 0, 0);
+
 
 	if (seeThroughCameraLens == false)
 	{
@@ -187,27 +180,71 @@ void Graphics::RenderFrame()
 	if (renderXYaxis)
 		this->deviceContext->Draw(this->vb_grid.BufferSize() / 2, this->vb_grid.BufferSize() / 2);
 
+	static bool drawFrustum = true;
+	static bool wireframeFrustum = false;
+	if (seeThroughCameraLens == false && drawFrustum == true)
+	{
+		this->deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+		float blendFactor[] = { 0.5f, 0.5f, 0.5f, 0.5f };
+		this->deviceContext->OMSetBlendState(this->transparentBlendState.Get(), blendFactor, 0xffffffff);
+		if (wireframeFrustum)
+			this->deviceContext->RSSetState(this->rasterizerState_noCull_wireFrame.Get());
+		else
+			this->deviceContext->RSSetState(this->rasterizerState_noCull.Get());
 
-	if (seeThroughCameraLens)
-		cb_vs_vertexshader.data.wvp = finalMat * renderCam.GetViewMatrix() * renderCam.GetProjectionMatrix();
-	else
-		cb_vs_vertexshader.data.wvp = finalMat * camViewMatrix * renderCam.GetViewMatrix() * renderCam.GetProjectionMatrix();
-	cb_vs_vertexshader.data.wvp = XMMatrixTranspose(cb_vs_vertexshader.data.wvp);
-	cb_vs_vertexshader.ApplyChanges();
+		float nearHeight = 2 * tan(fovRadians / 2) * nearZ;
+		float farHeight = 2 * tan(fovRadians / 2) * farZ;
+		float nearWidth = nearHeight * aspectRatio;
+		float farWidth = farHeight * aspectRatio;
+		std::vector<Vertex_COLOR> data;
+		float alpha = 0.5f;
+		data.push_back(Vertex_COLOR((-nearWidth * 0.5), (nearHeight*0.5), nearZ, 0.6f, 0.0f, 0.0f, alpha)); //Near Topleft
+		data.push_back(Vertex_COLOR((nearWidth*0.5), (nearHeight*0.5), nearZ, 0.6f, 0.0f, 0.0f, alpha)); //Near Topright
+		data.push_back(Vertex_COLOR((nearWidth*0.5), (-nearHeight * 0.5), nearZ, 0.6f, 0.0f, 0.0f, alpha)); //Near Bottomright
+		data.push_back(Vertex_COLOR(-(nearWidth*0.5), (-nearHeight * 0.5), nearZ, 0.6f, 0.0f, 0.0f, alpha)); //Near Bottomleft
+		data.push_back(Vertex_COLOR((-farWidth * 0.5), (farHeight*0.5), farZ, 0.0f, 0.9f, 0.0f, alpha)); //Far Topleft
+		data.push_back(Vertex_COLOR((farWidth*0.5), (farHeight*0.5), farZ, 0.0f, 0.9f, 0.0f, alpha)); //Far Topright
+		data.push_back(Vertex_COLOR((farWidth*0.5), (-farHeight * 0.5), farZ, 0.0f, 0.9f, 0.0f, alpha)); //Far Bottomright
+		data.push_back(Vertex_COLOR(-(farWidth*0.5), (-farHeight * 0.5), farZ, 0.0f, 0.9f, 0.0f, alpha)); //Far Bottomleft
 
+		DWORD indices[] =
+		{
+			//Near Plane
+			0, 1, 2, 
+			0, 2, 3,
+			//Far Plane
+			4, 5, 6,
+			4, 6, 7,
+			//Left Plane
+			0, 4, 7,
+			0, 7, 3,
+			//Right Plane
+			1, 5, 6,
+			1, 6, 2,
+			//Top Plane
+			0, 1, 4,
+			1, 4, 5,
+			//Bottom Plane
+			2, 3, 6,
+			3, 6, 7,
+		};
 
-	this->deviceContext->VSSetShader(vs_3d_textures.GetShader(), NULL, 0);
-	this->deviceContext->PSSetShader(ps_3d_textures.GetShader(), NULL, 0);
-	this->deviceContext->IASetInputLayout(this->vs_3d_textures.GetInputLayout());
-	this->deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		this->vb_frustum.Initialize(this->device.Get(), data.data(), data.size());
+		this->ib_frustum.Initialize(this->device.Get(), indices, ARRAYSIZE(indices));
+		cb_vs_vertexshader.data.wvp = renderCam.GetViewMatrix() * renderCam.GetProjectionMatrix();
+		cb_vs_vertexshader.data.wvp = XMMatrixTranspose(cb_vs_vertexshader.data.wvp);
+		cb_vs_vertexshader.ApplyChanges();
+		this->deviceContext->VSSetConstantBuffers(0, 1, this->cb_vs_vertexshader.GetAddressOf());
+		this->deviceContext->IASetVertexBuffers(0, 1, this->vb_frustum.GetAddressOf(), this->vb_frustum.Stride(), &offset);
+		this->deviceContext->IASetIndexBuffer(ib_frustum.Get(), DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);
+		this->deviceContext->DrawIndexed(ARRAYSIZE(indices), 0, 0);
+		this->deviceContext->RSSetState(this->rasterizerState.Get());
+		this->deviceContext->OMSetBlendState(0, 0, 0xffffffff); //set blend state to opaque for solid objects
 
-	this->deviceContext->PSSetShaderResources(0, 1, this->myTexture.GetAddressOf());
-	this->deviceContext->IASetVertexBuffers(0, 1, this->vb_texture.GetAddressOf(), this->vb_texture.Stride(), &offset);
-	this->deviceContext->IASetIndexBuffer(this->ib_texture.Get(), DXGI_FORMAT_R32_UINT, 0);
-	this->deviceContext->VSSetConstantBuffers(0, 1, this->cb_vs_vertexshader.GetAddressOf());
-	this->deviceContext->DrawIndexed(this->ib_texture.BufferSize(), 0, 0);
+	}
 
+	
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
@@ -223,18 +260,42 @@ void Graphics::RenderFrame()
 		ImGui::Begin("Camera Window");
 
 		ImGui::Text("View Matrix Fields.");               // Display some text (you can use a format strings too)
+		
 		ImGui::Checkbox("Draw Camera Viewing Frustum", &drawFrustum);
-
+		ImGui::SameLine();
+		ImGui::Checkbox("Wireframe", &wireframeFrustum);
 		ImGui::Checkbox("Use Virtual Camera Lens", &seeThroughCameraLens);
-
+		ImGui::Text("View Matrix Settings");
+		ImGui::SameLine();
+		if (ImGui::Button("Reset View Matrix"))
+		{
+			eyePos[0] = 0.0f;
+			eyePos[1] = 0.0f;
+			eyePos[2] = -2.0f;
+			lookatPos[0] = 0.0f;
+			lookatPos[1] = 0.0f;
+			lookatPos[2] = 1.0f;
+			upVector[0] = 0.0f;
+			upVector[1] = 1.0f;
+			upVector[2] = 0.0f;
+		}
 		ImGui::DragFloat3("Eye Pos X/Y/Z", eyePos, 0.1f, -25.0f, 25.0f);
 		ImGui::DragFloat3("Lookat Pos X/Y/Z", lookatPos, 0.1f, -25.0f, 25.0f);
 		ImGui::DragFloat3("Up Vector X/Y/Z", upVector, 0.1f, -25.0f, 25.0f);
 		ImGui::NewLine();
 		ImGui::NewLine();
-		ImGui::Text("Projection Matrix Fields.");
-
+		ImGui::Text("Projection Matrix Settings.");
+		ImGui::SameLine();
+		if (ImGui::Button("Reset Projection Matrix"))
+		{
+			FOV = 90.0f;
+			nearZ = 1.0f;
+			farZ = 10.0f;
+		}
 		ImGui::Text("Aspect Ratio = Width/Height [Locked]");
+		ImGui::DragFloat("FOV (Degrees)", &FOV, 0.1f, 0.1f, 180.0f);
+		ImGui::DragFloat("Near Z (Must be Less than Far Z)", &nearZ, 0.1f, 0.0f, farZ - 0.1f);
+		ImGui::DragFloat("Far Z (Must be Greater than Near Z)", &farZ, 0.1f, nearZ + 0.1f, 50.0f);
 
 		ImGui::End();
 
@@ -527,6 +588,19 @@ bool Graphics::InitializeDirectX(HWND hwnd, int width, int height)
 		return false;
 	}
 
+	ZeroMemory(&rasterizerDesc, sizeof(D3D11_RASTERIZER_DESC));
+
+	rasterizerDesc.FillMode = D3D11_FILL_MODE::D3D11_FILL_WIREFRAME;
+	rasterizerDesc.CullMode = D3D11_CULL_MODE::D3D11_CULL_NONE;
+	rasterizerDesc.DepthClipEnable = TRUE;
+
+	hr = this->device->CreateRasterizerState(&rasterizerDesc, this->rasterizerState_noCull_wireFrame.GetAddressOf());
+	if (FAILED(hr))
+	{
+		ErrorLogger::Log(hr, "Failed to create rasterizer state.");
+		return false;
+	}
+
 	spriteBatch = std::make_unique<DirectX::SpriteBatch>(this->deviceContext.Get());
 	spriteFont = std::make_unique<DirectX::SpriteFont>(this->device.Get(), L"Data\\Fonts\\comic_sans_ms_16.spritefont");
 
@@ -544,6 +618,32 @@ bool Graphics::InitializeDirectX(HWND hwnd, int width, int height)
 	if (FAILED(hr))
 	{
 		ErrorLogger::Log(hr, "Failed to create sampler state.");
+		return false;
+	}
+
+	//create transparent blend state for frustum drawing
+	D3D11_BLEND_DESC blendDesc;
+	ZeroMemory(&blendDesc, sizeof(blendDesc));
+
+	D3D11_RENDER_TARGET_BLEND_DESC rtbd;
+	ZeroMemory(&rtbd, sizeof(rtbd));
+
+	rtbd.BlendEnable = true;
+	rtbd.SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	rtbd.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	rtbd.BlendOp = D3D11_BLEND_OP_ADD;
+	rtbd.SrcBlendAlpha = D3D11_BLEND_ONE;
+	rtbd.DestBlendAlpha = D3D11_BLEND_ZERO;
+	rtbd.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	rtbd.RenderTargetWriteMask = 0x0f;
+
+	//blendDesc.AlphaToCoverageEnable = false;
+	blendDesc.RenderTarget[0] = rtbd;
+
+	hr = this->device->CreateBlendState(&blendDesc, this->transparentBlendState.GetAddressOf());
+	if (FAILED(hr))
+	{
+		ErrorLogger::Log(hr, "Failed to create blend state.");
 		return false;
 	}
 
@@ -597,8 +697,8 @@ bool Graphics::InitializeShaders()
 
 	D3D11_INPUT_ELEMENT_DESC inputLayout_3d_colors[] =
 	{
-		{"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
-		{"COLOR", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
+		{"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
+		{"COLOR", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
 	};
 	numElements = ARRAYSIZE(inputLayout_3d_colors);
 
@@ -672,29 +772,30 @@ bool Graphics::InitializeScene()
 	std::vector<Vertex_COLOR> v2;
 	float gridDimension = 25.0f;
 	int gridSections = 25;
+	float alpha = 1.0f;
 	//Draw -Z -> +Z (Red->White) //[X-Z Axis]
 	for (int i = 0; i < gridSections; i++)
 	{
-		v2.push_back(Vertex_COLOR(0.0f - gridDimension / 2 + i * gridDimension / gridSections, 0.0f, -gridDimension / 2.0f, 1.0f, 0.0f, 0.0f));
-		v2.push_back(Vertex_COLOR(0.0f - gridDimension / 2 + i * gridDimension / gridSections, 0.0f, +(gridDimension) / 2.0f - gridDimension / gridSections, 1.0f, 1.0f, 1.0f));
+		v2.push_back(Vertex_COLOR(0.0f - gridDimension / 2 + i * gridDimension / gridSections, 0.0f, -gridDimension / 2.0f, 1.0f, 0.0f, 0.0f, alpha));
+		v2.push_back(Vertex_COLOR(0.0f - gridDimension / 2 + i * gridDimension / gridSections, 0.0f, +(gridDimension) / 2.0f - gridDimension / gridSections, 1.0f, 1.0f, 1.0f, alpha));
 	}
 	//Draw -X -> +X (Blue->White)  //[X-Z Axis]
 	for (int i = 0; i < gridSections; i++)
 	{
-		v2.push_back(Vertex_COLOR(-gridDimension/2.0f, 0.0f, 0.0f - gridDimension / 2 + i * gridDimension / gridSections, 0.0f, 0.0f, 1.0f));
-		v2.push_back(Vertex_COLOR(+gridDimension/2.0f - gridDimension / gridSections, 0.0f, 0.0f - gridDimension / 2 + i * gridDimension / gridSections, 1.0f, 1.0f, 1.0f));
+		v2.push_back(Vertex_COLOR(-gridDimension/2.0f, 0.0f, 0.0f - gridDimension / 2 + i * gridDimension / gridSections, 0.0f, 0.0f, 1.0f, alpha));
+		v2.push_back(Vertex_COLOR(+gridDimension/2.0f - gridDimension / gridSections, 0.0f, 0.0f - gridDimension / 2 + i * gridDimension / gridSections, 1.0f, 1.0f, 1.0f, alpha));
 	}
 	//Draw -X -> +X (Blue->White) //[X-Y Axis]
 	for (int i = 0; i < gridSections; i++)
 	{
-		v2.push_back(Vertex_COLOR(-gridDimension / 2.0f, 0.0f - gridDimension / 2 + i * gridDimension / gridSections, 0.0f, 0.0f, 0.0f, 1.0f));
-		v2.push_back(Vertex_COLOR(+gridDimension / 2.0f - gridDimension / gridSections, 0.0f - gridDimension / 2 + i * gridDimension / gridSections, 0.0f, 1.0f, 1.0f, 1.0f));
+		v2.push_back(Vertex_COLOR(-gridDimension / 2.0f, 0.0f - gridDimension / 2 + i * gridDimension / gridSections, 0.0f, 0.0f, 0.0f, 1.0f, alpha));
+		v2.push_back(Vertex_COLOR(+gridDimension / 2.0f - gridDimension / gridSections, 0.0f - gridDimension / 2 + i * gridDimension / gridSections, 0.0f, 1.0f, 1.0f, 1.0f, alpha));
 	}
 	//Draw -Y -> +Y (Green->White) //[X-Y Axis]
 	for (int i = 0; i < gridSections; i++)
 	{
-		v2.push_back(Vertex_COLOR(0.0f - gridDimension / 2 + i * gridDimension / gridSections, -gridDimension/2.0f, 0.0f, 0.0f, 1.0f, 0.0f));
-		v2.push_back(Vertex_COLOR(0.0f - gridDimension / 2 + i * gridDimension / gridSections, +gridDimension / 2.0f - gridDimension / gridSections, 0.0f, 1.0f, 1.0f, 1.0f));
+		v2.push_back(Vertex_COLOR(0.0f - gridDimension / 2 + i * gridDimension / gridSections, -gridDimension/2.0f, 0.0f, 0.0f, 1.0f, 0.0f, alpha));
+		v2.push_back(Vertex_COLOR(0.0f - gridDimension / 2 + i * gridDimension / gridSections, +gridDimension / 2.0f - gridDimension / gridSections, 0.0f, 1.0f, 1.0f, 1.0f, alpha));
 	}
 
 	hr = vb_grid.Initialize(this->device.Get(), v2.data(), v2.size());

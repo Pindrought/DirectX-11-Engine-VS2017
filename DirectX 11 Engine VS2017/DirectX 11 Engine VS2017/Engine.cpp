@@ -33,6 +33,8 @@ void Engine::Update()
 	while (!mouse.EventBufferIsEmpty())
 	{
 		MouseEvent me = mouse.ReadEvent();
+		if (gfx.seeThroughCameraLens)
+			continue;
 		if (mouse.IsRightDown())
 		{
 			if (me.GetType() == MouseEvent::EventType::RAW_MOVE)
@@ -42,29 +44,32 @@ void Engine::Update()
 		}
 	}
 
-	if (keyboard.KeyIsPressed('W'))
+	if (!gfx.seeThroughCameraLens)
 	{
-		this->gfx.camera.AdjustPosition(this->gfx.camera.GetForwardVector() * dt * 0.02f);
-	}
-	if (keyboard.KeyIsPressed('S'))
-	{
-		this->gfx.camera.AdjustPosition(this->gfx.camera.GetBackwardVector() * dt * 0.02f);
-	}
-	if (keyboard.KeyIsPressed('A'))
-	{
-		this->gfx.camera.AdjustPosition(this->gfx.camera.GetLeftVector() * dt * 0.02f);
-	}
-	if (keyboard.KeyIsPressed('D'))
-	{
-		this->gfx.camera.AdjustPosition(this->gfx.camera.GetRightVector() * dt * 0.02f);
-	}
-	if (keyboard.KeyIsPressed(VK_SPACE))
-	{
-		this->gfx.camera.AdjustPosition({ 0.0f, dt * 0.02f, 0.0f });
-	}
-	if (keyboard.KeyIsPressed('Z'))
-	{
-		this->gfx.camera.AdjustPosition({ 0.0f, -dt * 0.02f, 0.0f });
+		if (keyboard.KeyIsPressed('W'))
+		{
+			this->gfx.camera.AdjustPosition(this->gfx.camera.GetForwardVector() * dt * 0.02f);
+		}
+		if (keyboard.KeyIsPressed('S'))
+		{
+			this->gfx.camera.AdjustPosition(this->gfx.camera.GetBackwardVector() * dt * 0.02f);
+		}
+		if (keyboard.KeyIsPressed('A'))
+		{
+			this->gfx.camera.AdjustPosition(this->gfx.camera.GetLeftVector() * dt * 0.02f);
+		}
+		if (keyboard.KeyIsPressed('D'))
+		{
+			this->gfx.camera.AdjustPosition(this->gfx.camera.GetRightVector() * dt * 0.02f);
+		}
+		if (keyboard.KeyIsPressed(VK_SPACE))
+		{
+			this->gfx.camera.AdjustPosition({ 0.0f, dt * 0.02f, 0.0f });
+		}
+		if (keyboard.KeyIsPressed('Z'))
+		{
+			this->gfx.camera.AdjustPosition({ 0.0f, -dt * 0.02f, 0.0f });
+		}
 	}
 
 

@@ -24,6 +24,7 @@ public:
 	bool Initialize(HWND hwnd, int width, int height);
 	void RenderFrame();
 	Camera camera;
+	bool seeThroughCameraLens = false;
 
 private:
 	bool InitializeDirectX(HWND hwnd, int width, int height);
@@ -48,6 +49,9 @@ private:
 	VertexBuffer<Vertex_COLOR> vb_frustum;
 	IndexBuffer ib_frustum;
 
+	Microsoft::WRL::ComPtr<ID3D11BlendState> transparentBlendState;
+
+
 	ConstantBuffer<CB_VS_vertexshader> cb_vs_vertexshader;
 
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthStencilView;
@@ -56,6 +60,8 @@ private:
 
 	Microsoft::WRL::ComPtr<ID3D11RasterizerState> rasterizerState;
 	Microsoft::WRL::ComPtr<ID3D11RasterizerState> rasterizerState_noCull;
+	Microsoft::WRL::ComPtr<ID3D11RasterizerState> rasterizerState_noCull_wireFrame;
+
 
 	std::unique_ptr<DirectX::SpriteBatch> spriteBatch;
 	std::unique_ptr<DirectX::SpriteFont> spriteFont;

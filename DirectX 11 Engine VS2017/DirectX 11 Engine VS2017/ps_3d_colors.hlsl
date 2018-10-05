@@ -6,5 +6,6 @@ struct PS_INPUT
 
 float4 main(PS_INPUT input) : SV_TARGET
 {
-    return float4(input.inColor);
+    return input.inColor;
+    //return float4(float3(input.inColor.r, input.inColor.g, input.inColor.b), 0.5f);
 }
