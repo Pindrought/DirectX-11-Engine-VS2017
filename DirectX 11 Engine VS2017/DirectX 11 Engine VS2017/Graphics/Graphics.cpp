@@ -103,7 +103,7 @@ void Graphics::RenderFrame()
 	XMMATRIX camTranslationOffset = XMMatrixTranslation(-eyePos[0], -eyePos[1], -eyePos[2]);
 	XMVECTOR eyePosVec = { eyePos[0], eyePos[1], eyePos[2], 0.0f };
 	XMVECTOR lookatVec = { lookatPos[0], lookatPos[1], lookatPos[2], 1.0f };
-	XMVECTOR upVectorVec = { upVector[0], upVector[1], upVector[2], 1.0f };
+	XMVECTOR upVectorVec = { upVector[0], upVector[1], upVector[2], 0.0f };
 	XMMATRIX camViewMatrix = XMMatrixLookAtLH(eyePosVec, lookatVec, upVectorVec);
 
 	static float FOV = 90.0f;
