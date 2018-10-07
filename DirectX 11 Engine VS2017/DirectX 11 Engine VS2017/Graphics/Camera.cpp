@@ -122,7 +122,15 @@ void Camera::SetLookAtPos(XMFLOAT3 lookAtPos)
 		pitch = atan(lookAtPos.y / distance);
 	}
 
-	this->SetRotation(pitch, 0.0f, 0.0f);
+	float yaw = 0.0f;
+	if (lookAtPos.x != 0.0f)
+	{
+		yaw = atan(lookAtPos.x / lookAtPos.z);
+	}
+	if (lookAtPos.z > 0)
+		yaw += XM_PI;
+
+	this->SetRotation(pitch, yaw, 0.0f);
 }
 
 void Camera::UpdateViewMatrix() //Updates view matrix and also updates the movement vectors
