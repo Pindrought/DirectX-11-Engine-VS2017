@@ -2,7 +2,10 @@
 
 bool Graphics::Initialize(HWND hwnd, int width, int height)
 {
-	if (!InitializeDirectX(hwnd, width, height))
+	this->windowWidth = width;
+	this->windowHeight = height;
+
+	if (!InitializeDirectX(hwnd))
 		return false;
 
 	if (!InitializeShaders())
@@ -31,7 +34,25 @@ void Graphics::RenderFrame()
 	UINT offset = 0;
 
 	//Update Constant Buffer
-	constantBuffer.data.mat = DirectX::XMMatrixScaling(0.5f, 0.5f, 1.0f) * DirectX::XMMatrixScaling(0.5f, 0.5f, 1.0f);
+	DirectX::XMMATRIX world = DirectX::XMMatrixIdentity();
+	static DirectX::XMVECTOR eyePos = DirectX::XMVectorSet(0.0f, -4.0f, -2.0f, 0.0f);
+	DirectX::XMFLOAT3 eyePosFloat3;
+	DirectX::XMStoreFloat3(&eyePosFloat3, eyePos);
+	eyePosFloat3.y += 0.01f;
+	eyePos = DirectX::XMLoadFloat3(&eyePosFloat3);
+
+	static DirectX::XMVECTOR lookAtPos = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f); //Look at center of the world
+	static DirectX::XMVECTOR upVector = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f); //Positive Y Axis = Up
+	DirectX::XMMATRIX viewMatrix = DirectX::XMMatrixLookAtLH(eyePos, lookAtPos, upVector);
+	float fovDegrees = 90.0f; //90 Degree Field of View
+	float fovRadians = (fovDegrees / 360.0f) * DirectX::XM_2PI;
+	float aspectRatio = static_cast<float>(this->windowWidth) / static_cast<float>(this->windowHeight);
+	float nearZ = 0.1f;
+	float farZ = 1000.0f;
+	DirectX::XMMATRIX projectionMatrix = DirectX::XMMatrixPerspectiveFovLH(fovRadians, aspectRatio, nearZ, farZ);
+
+
+	constantBuffer.data.mat = world * viewMatrix * projectionMatrix;
 	constantBuffer.data.mat = DirectX::XMMatrixTranspose(constantBuffer.data.mat);
 
 	if (!constantBuffer.ApplyChanges())
@@ -52,7 +73,7 @@ void Graphics::RenderFrame()
 	this->swapchain->Present(1, NULL);
 }
 
-bool Graphics::InitializeDirectX(HWND hwnd, int width, int height)
+bool Graphics::InitializeDirectX(HWND hwnd)
 {
 	std::vector<AdapterData> adapters = AdapterReader::GetAdapters();
 
@@ -65,8 +86,8 @@ bool Graphics::InitializeDirectX(HWND hwnd, int width, int height)
 	DXGI_SWAP_CHAIN_DESC scd;
 	ZeroMemory(&scd, sizeof(DXGI_SWAP_CHAIN_DESC));
 
-	scd.BufferDesc.Width = width;
-	scd.BufferDesc.Height = height;
+	scd.BufferDesc.Width = this->windowWidth;
+	scd.BufferDesc.Height = this->windowHeight;
 	scd.BufferDesc.RefreshRate.Numerator = 60;
 	scd.BufferDesc.RefreshRate.Denominator = 1;
 	scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -120,8 +141,8 @@ bool Graphics::InitializeDirectX(HWND hwnd, int width, int height)
 
 	//Describe our Depth/Stencil Buffer
 	D3D11_TEXTURE2D_DESC depthStencilDesc;
-	depthStencilDesc.Width = width;
-	depthStencilDesc.Height = height;
+	depthStencilDesc.Width = this->windowWidth;
+	depthStencilDesc.Height = this->windowHeight;
 	depthStencilDesc.MipLevels = 1;
 	depthStencilDesc.ArraySize = 1;
 	depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -169,8 +190,8 @@ bool Graphics::InitializeDirectX(HWND hwnd, int width, int height)
 
 	viewport.TopLeftX = 0;
 	viewport.TopLeftY = 0;
-	viewport.Width = width;
-	viewport.Height = height;
+	viewport.Width = this->windowWidth;
+	viewport.Height = this->windowHeight;
 	viewport.MinDepth = 0.0f;
 	viewport.MaxDepth = 1.0f;
 
@@ -258,10 +279,10 @@ bool Graphics::InitializeScene()
 	//Textured Square
 	Vertex v[] =
 	{
-		Vertex(-0.5f,  -0.5f, 1.0f, 0.0f, 1.0f), //Bottom Left   - [0]
-		Vertex(-0.5f,   0.5f, 1.0f, 0.0f, 0.0f), //Top Left      - [1]
-		Vertex( 0.5f,   0.5f, 1.0f, 1.0f, 0.0f), //Top Right     - [2]
-		Vertex(0.5f,  -0.5f, 1.0f, 1.0f, 1.0f), //Bottom Right   - [3]
+		Vertex(-0.5f,  -0.5f, 0.0f, 0.0f, 1.0f), //Bottom Left   - [0]
+		Vertex(-0.5f,   0.5f, 0.0f, 0.0f, 0.0f), //Top Left      - [1]
+		Vertex( 0.5f,   0.5f, 0.0f, 1.0f, 0.0f), //Top Right     - [2]
+		Vertex(0.5f,  -0.5f, 0.0f, 1.0f, 1.0f), //Bottom Right   - [3]
 	};
 
 	//Load Vertex Data
