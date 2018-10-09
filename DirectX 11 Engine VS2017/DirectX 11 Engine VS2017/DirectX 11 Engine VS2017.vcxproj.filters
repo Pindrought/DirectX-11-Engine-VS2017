@@ -37,6 +37,9 @@
     <Filter Include="Source Files\Graphics\ImGUI">
       <UniqueIdentifier>{bd4caf4c-260c-42c2-8179-9fc325b80f63}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\ImGUI">
+      <UniqueIdentifier>{85ac0dc1-5bf1-437f-92a6-0c1eaa398f3b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source.cpp">
@@ -162,6 +165,18 @@
       <Filter>Header Files\Graphics\ImGUI</Filter>
     </ClInclude>
     <ClInclude Include="Graphics\imgui_internal.h">
+      <Filter>Header Files\Graphics\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\imconfig.h">
+      <Filter>Header Files\Graphics\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\imstb_rectpack.h">
+      <Filter>Header Files\Graphics\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\imstb_textedit.h">
+      <Filter>Header Files\Graphics\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\imstb_truetype.h">
       <Filter>Header Files\Graphics\ImGUI</Filter>
     </ClInclude>
   </ItemGroup>
