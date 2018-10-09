@@ -164,6 +164,18 @@
     <ClInclude Include="Graphics\imgui_internal.h">
       <Filter>Header Files\Graphics\ImGUI</Filter>
     </ClInclude>
+    <ClInclude Include="Graphics\imstb_truetype.h">
+      <Filter>Header Files\Graphics\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\imstb_textedit.h">
+      <Filter>Header Files\Graphics\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\imstb_rectpack.h">
+      <Filter>Header Files\Graphics\ImGUI</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\imconfig.h">
+      <Filter>Header Files\Graphics\ImGUI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="vs_3d_textures.hlsl">
