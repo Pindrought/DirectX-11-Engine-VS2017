@@ -99,6 +99,9 @@
     <ClCompile Include="Graphics\ImGui\imgui.cpp">
       <Filter>Source Files\Graphics\ImGui</Filter>
     </ClCompile>
+    <ClCompile Include="Graphics\ImGui\imgui_demo.cpp">
+      <Filter>Source Files\Graphics\ImGui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="StringConverter.h">

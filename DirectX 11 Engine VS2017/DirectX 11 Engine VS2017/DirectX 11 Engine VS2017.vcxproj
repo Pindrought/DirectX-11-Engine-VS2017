@@ -153,6 +153,7 @@
     <ClCompile Include="ErrorLogger.cpp" />
     <ClCompile Include="Graphics\Graphics.cpp" />
     <ClCompile Include="Graphics\ImGui\imgui.cpp" />
+    <ClCompile Include="Graphics\ImGui\imgui_demo.cpp" />
     <ClCompile Include="Graphics\ImGui\imgui_draw.cpp" />
     <ClCompile Include="Graphics\ImGui\imgui_impl_dx11.cpp" />
     <ClCompile Include="Graphics\ImGui\imgui_impl_win32.cpp" />
