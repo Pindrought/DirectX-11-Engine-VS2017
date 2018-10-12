@@ -37,21 +37,27 @@ void Graphics::RenderFrame()
 	this->deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	this->deviceContext->RSSetState(this->rasterizerState.Get());
 	this->deviceContext->OMSetDepthStencilState(this->depthStencilState.Get(), 0);
+	this->deviceContext->OMSetBlendState(this->blendState.Get(), NULL, 0xFFFFFFFF);
 	this->deviceContext->PSSetSamplers(0, 1, this->samplerState.GetAddressOf());
 	this->deviceContext->VSSetShader(vertexshader.GetShader(), NULL, 0);
 	this->deviceContext->PSSetShader(pixelshader.GetShader(), NULL, 0);
-
+	
 	UINT offset = 0;
 
 	//Update Constant Buffer
 	static float translationOffset[3] = { 0, 0, 0 };
 	XMMATRIX world = XMMatrixTranslation(translationOffset[0], translationOffset[1], translationOffset[2]);
-	constantBuffer.data.mat = world * camera.GetViewMatrix() * camera.GetProjectionMatrix();
-	constantBuffer.data.mat = DirectX::XMMatrixTranspose(constantBuffer.data.mat);
+	cb_vs_vertexshader.data.mat = world * camera.GetViewMatrix() * camera.GetProjectionMatrix();
+	cb_vs_vertexshader.data.mat = DirectX::XMMatrixTranspose(cb_vs_vertexshader.data.mat);
 
-	if (!constantBuffer.ApplyChanges())
+	if (!cb_vs_vertexshader.ApplyChanges())
 		return;
-	this->deviceContext->VSSetConstantBuffers(0, 1, this->constantBuffer.GetAddressOf());
+	this->deviceContext->VSSetConstantBuffers(0, 1, this->cb_vs_vertexshader.GetAddressOf());
+
+	static float alpha = 0.1f;
+	this->cb_ps_pixelshader.data.alpha = alpha;
+	this->cb_ps_pixelshader.ApplyChanges();
+	this->deviceContext->PSSetConstantBuffers(0, 1, this->cb_ps_pixelshader.GetAddressOf());
 
 	//Square
 	this->deviceContext->PSSetShaderResources(0, 1, this->myTexture.GetAddressOf());
@@ -80,13 +86,7 @@ void Graphics::RenderFrame()
 	ImGui::NewFrame();
 	//Create ImGui Test Window
 	ImGui::Begin("Test");
-	ImGui::Text("This is example text.");
-	if (ImGui::Button("CLICK ME!"))
-		counter += 1;
-	ImGui::SameLine();
-	std::string clickCount = "Click Count: " + std::to_string(counter);
-	ImGui::Text(clickCount.c_str());
-	ImGui::DragFloat3("Translation X/Y/Z", translationOffset, 0.1f, -5.0f, 5.0f);
+	ImGui::DragFloat("Alpha", &alpha, 0.1f, 0.0f, 1.0f);
 	ImGui::End();
 	//Assemble Together Draw Data
 	ImGui::Render();
@@ -234,6 +234,31 @@ bool Graphics::InitializeDirectX(HWND hwnd)
 		return false;
 	}
 
+	//Create Blend State
+	D3D11_BLEND_DESC blendDesc;
+	ZeroMemory(&blendDesc, sizeof(blendDesc));
+
+	D3D11_RENDER_TARGET_BLEND_DESC rtbd;
+	ZeroMemory(&rtbd, sizeof(rtbd));
+
+	rtbd.BlendEnable = true;
+	rtbd.SrcBlend = D3D11_BLEND::D3D11_BLEND_SRC_ALPHA;
+	rtbd.DestBlend = D3D11_BLEND::D3D11_BLEND_INV_SRC_ALPHA;
+	rtbd.BlendOp = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
+	rtbd.SrcBlendAlpha = D3D11_BLEND::D3D11_BLEND_ONE;
+	rtbd.DestBlendAlpha = D3D11_BLEND::D3D11_BLEND_ZERO;
+	rtbd.BlendOpAlpha = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
+	rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE::D3D11_COLOR_WRITE_ENABLE_ALL;
+
+	blendDesc.RenderTarget[0] = rtbd;
+
+	hr = this->device->CreateBlendState(&blendDesc, this->blendState.GetAddressOf());
+	if (FAILED(hr))
+	{
+		ErrorLogger::Log(hr, "Failed to create blend state.");
+		return false;
+	}
+
 	spriteBatch = std::make_unique<DirectX::SpriteBatch>(this->deviceContext.Get());
 	spriteFont = std::make_unique<DirectX::SpriteFont>(this->device.Get(), L"Data\\Fonts\\comic_sans_ms_16.spritefont");
 
@@ -340,7 +365,14 @@ bool Graphics::InitializeScene()
 	}
 
 	//Initialize Constant Buffer(s)
-	hr = this->constantBuffer.Initialize(this->device.Get(), this->deviceContext.Get());
+	hr = this->cb_vs_vertexshader.Initialize(this->device.Get(), this->deviceContext.Get());
+	if (FAILED(hr))
+	{
+		ErrorLogger::Log(hr, "Failed to initialize constant buffer.");
+		return false;
+	}
+
+	hr = this->cb_ps_pixelshader.Initialize(this->device.Get(), this->deviceContext.Get());
 	if (FAILED(hr))
 	{
 		ErrorLogger::Log(hr, "Failed to initialize constant buffer.");
