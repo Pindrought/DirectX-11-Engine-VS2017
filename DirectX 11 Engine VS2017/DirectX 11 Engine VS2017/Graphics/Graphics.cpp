@@ -209,20 +209,20 @@ bool Graphics::InitializeDirectX(HWND hwnd)
 	}
 
 	//Describe our Depth/Stencil Buffer
-	D3D11_TEXTURE2D_DESC depthStencilDesc;
-	depthStencilDesc.Width = this->windowWidth;
-	depthStencilDesc.Height = this->windowHeight;
-	depthStencilDesc.MipLevels = 1;
-	depthStencilDesc.ArraySize = 1;
-	depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	depthStencilDesc.SampleDesc.Count = 1;
-	depthStencilDesc.SampleDesc.Quality = 0;
-	depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
-	depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-	depthStencilDesc.CPUAccessFlags = 0;
-	depthStencilDesc.MiscFlags = 0;
+	D3D11_TEXTURE2D_DESC depthStencilTextureDesc;
+	depthStencilTextureDesc.Width = this->windowWidth;
+	depthStencilTextureDesc.Height = this->windowHeight;
+	depthStencilTextureDesc.MipLevels = 1;
+	depthStencilTextureDesc.ArraySize = 1;
+	depthStencilTextureDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	depthStencilTextureDesc.SampleDesc.Count = 1;
+	depthStencilTextureDesc.SampleDesc.Quality = 0;
+	depthStencilTextureDesc.Usage = D3D11_USAGE_DEFAULT;
+	depthStencilTextureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	depthStencilTextureDesc.CPUAccessFlags = 0;
+	depthStencilTextureDesc.MiscFlags = 0;
 
-	hr = this->device->CreateTexture2D(&depthStencilDesc, NULL, this->depthStencilBuffer.GetAddressOf());
+	hr = this->device->CreateTexture2D(&depthStencilTextureDesc, NULL, this->depthStencilBuffer.GetAddressOf());
 	if (FAILED(hr)) //If error occurred
 	{
 		ErrorLogger::Log(hr, "Failed to create depth stencil buffer.");
