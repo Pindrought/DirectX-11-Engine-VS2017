@@ -45,7 +45,7 @@ void Graphics::RenderFrame()
 	UINT offset = 0;
 
 	static float alpha = 0.5f;
-	{ //Pink Texture
+	{ //Pavement Cube Texture
 		//Update Constant Buffer
 		static float translationOffset[3] = { 0, 0, -1.0f };
 		XMMATRIX world = XMMatrixTranslation(translationOffset[0], translationOffset[1], translationOffset[2]);
