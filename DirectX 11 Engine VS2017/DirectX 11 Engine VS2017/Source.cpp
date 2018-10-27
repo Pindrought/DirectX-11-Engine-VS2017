@@ -1,7 +1,6 @@
 //Tutorial 43 Solution 2018-10-27 
 #include "Engine.h"
 
-
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
 	_In_ LPWSTR    lpCmdLine,
