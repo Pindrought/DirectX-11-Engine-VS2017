@@ -37,39 +37,47 @@ void Graphics::RenderFrame()
 	this->deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	this->deviceContext->RSSetState(this->rasterizerState.Get());
 	this->deviceContext->OMSetDepthStencilState(this->depthStencilState.Get(), 0);
-	this->deviceContext->OMSetBlendState(this->blendState.Get(), NULL, 0xFFFFFFFF);
+	this->deviceContext->OMSetBlendState(NULL, NULL, 0xFFFFFFFF);
 	this->deviceContext->PSSetSamplers(0, 1, this->samplerState.GetAddressOf());
 	this->deviceContext->VSSetShader(vertexshader.GetShader(), NULL, 0);
 	this->deviceContext->PSSetShader(pixelshader.GetShader(), NULL, 0);
 	
 	UINT offset = 0;
 
-	static float alpha = 0.5f;
 	{ //Pavement Cube Texture
-		//Update Constant Buffer
-		this->cb_ps_pixelshader.data.alpha = alpha;
-		this->cb_ps_pixelshader.ApplyChanges();
-		this->deviceContext->PSSetConstantBuffers(0, 1, this->cb_ps_pixelshader.GetAddressOf());
+		this->deviceContext->IASetInputLayout(this->vertexshader_instanced.GetInputLayout());
+		this->deviceContext->VSSetShader(vertexshader_instanced.GetShader(), NULL, 0);
+		this->deviceContext->PSSetShaderResources(0, 1, this->pavementTexture.GetAddressOf());
 
-		this->cube.SetPosition(XMFLOAT3(0.0f, 0.0f, 0.0f));
-		this->cube.SetTexture(this->pavementTexture.Get());
-		//Draw Triangles facing away from camera
-		this->deviceContext->RSSetState(this->rasterizerState_CullFront.Get());
-		this->cube.Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
-		//Draw Triangles facing camera
-		this->deviceContext->RSSetState(this->rasterizerState.Get());
-		this->cube.Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+		XMMATRIX viewProj = camera.GetViewMatrix() * camera.GetProjectionMatrix();
 
+		this->cb_vs_vertexshader.data.mat = viewProj;
+		this->cb_vs_vertexshader.ApplyChanges();
+		this->deviceContext->VSSetConstantBuffers(0, 1, this->cb_vs_vertexshader.GetAddressOf());
 
-		this->cube.SetPosition(XMFLOAT3(2.0f, 0.0f, 0.0f));
-		this->cube.SetTexture(this->grassTexture.Get());
-		//Draw Triangles facing away from camera
-		this->deviceContext->RSSetState(this->rasterizerState_CullFront.Get());
-		this->cube.Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
-		//Draw Triangles facing camera
-		this->deviceContext->RSSetState(this->rasterizerState.Get());
-		this->cube.Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
-
+		static std::vector<XMMATRIX> matrices;
+		
+		if (matrices.size() == 0)
+		{
+			float rowcount = 10.0f;
+			float columncount = 10.0f;
+			float depthCount = 10.0f;
+			matrices.resize(rowcount*columncount*depthCount);
+			int index = 0;
+			for (float y = -rowcount / 2; y < rowcount / 2; y += 1.0f)
+			{
+				for (float x = -columncount / 2; x < columncount / 2; x += 1.0f)
+				{
+					for (float z = -depthCount / 2; z < depthCount / 2; z += 1.0f)
+					{
+						matrices[index] = XMMatrixTranslation(2 * x, 2 * y, 2 * z);
+						index += 1;
+					}
+				}
+			}
+		}
+		
+		this->cube.DrawInstanced(matrices, viewProj);
 	}
 
 	//Draw Text
@@ -86,19 +94,19 @@ void Graphics::RenderFrame()
 	spriteFont->DrawString(spriteBatch.get(), StringConverter::StringToWide(fpsString).c_str(), DirectX::XMFLOAT2(0, 0), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f,0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
 	spriteBatch->End();
 
-	static int counter = 0;
-	// Start the Dear ImGui frame
-	ImGui_ImplDX11_NewFrame();
-	ImGui_ImplWin32_NewFrame();
-	ImGui::NewFrame();
-	//Create ImGui Test Window
-	ImGui::Begin("Test");
-	ImGui::DragFloat("Alpha", &alpha, 0.1f, 0.0f, 1.0f);
-	ImGui::End();
-	//Assemble Together Draw Data
-	ImGui::Render();
-	//Render Draw Data
-	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+	//static int counter = 0;
+	//// Start the Dear ImGui frame
+	//ImGui_ImplDX11_NewFrame();
+	//ImGui_ImplWin32_NewFrame();
+	//ImGui::NewFrame();
+	////Create ImGui Test Window
+	//ImGui::Begin("Test");
+	//ImGui::DragFloat("Alpha", &alpha, 0.1f, 0.0f, 1.0f);
+	//ImGui::End();
+	////Assemble Together Draw Data
+	//ImGui::Render();
+	////Render Draw Data
+	//ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
 	this->swapchain->Present(0, NULL);
 }
@@ -265,6 +273,29 @@ bool Graphics::InitializeShaders()
 	if (!pixelshader.Initialize(this->device, shaderfolder + L"pixelshader.cso"))
 		return false;
 
+	
+
+	D3D11_INPUT_ELEMENT_DESC layout_instanced[] =
+	{
+		{"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
+		{"TEXCOORD", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
+		{"INSTANCEMAT", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+		{"INSTANCEMAT", 1, DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+		{"INSTANCEMAT", 2, DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+		{"INSTANCEMAT", 3, DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+	};
+
+	/*D3D11_INPUT_ELEMENT_DESC layout_instanced[] =
+	{
+		{"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
+		{"TEXCOORD", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
+		{"YOFFSET", 0, DXGI_FORMAT::DXGI_FORMAT_R32_FLOAT, 1, 0, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+	};*/
+
+	numElements = ARRAYSIZE(layout_instanced);
+	if (!vertexshader_instanced.Initialize(this->device, shaderfolder + L"vertexshader_instanced.cso", layout_instanced, numElements))
+		return false;
+	
 
 	return true;
 }
@@ -273,7 +304,6 @@ bool Graphics::InitializeScene()
 {
 	try
 	{
-		
 		//Load Textures
 		HRESULT hr = DirectX::CreateWICTextureFromFile(this->device.Get(), L"Data\\Textures\\seamless_grass.jpg", nullptr, grassTexture.GetAddressOf());
 		COM_ERROR_IF_FAILED(hr, "Failed to create wic texture from file.");

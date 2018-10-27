@@ -194,12 +194,18 @@
     <ClInclude Include="Graphics\Model.h">
       <Filter>Header Files\Graphics</Filter>
     </ClInclude>
+    <ClInclude Include="Graphics\InstanceBuffer.h">
+      <Filter>Header Files\Graphics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="vertexshader.hlsl">
       <Filter>Resource Files</Filter>
     </FxCompile>
     <FxCompile Include="pixelshader.hlsl">
+      <Filter>Resource Files</Filter>
+    </FxCompile>
+    <FxCompile Include="vertexshader_instanced.hlsl">
       <Filter>Resource Files</Filter>
     </FxCompile>
   </ItemGroup>

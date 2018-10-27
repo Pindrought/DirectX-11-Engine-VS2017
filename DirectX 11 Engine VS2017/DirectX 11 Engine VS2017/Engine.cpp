@@ -20,7 +20,7 @@ bool Engine::ProcessMessages()
 
 void Engine::Update()
 {
-	float dt = timer.GetMilisecondsElapsed();
+	float dt = static_cast<float>(timer.GetMilisecondsElapsed());
 	timer.Restart();
 
 	while (!keyboard.CharBufferIsEmpty())
@@ -46,7 +46,15 @@ void Engine::Update()
 		}
 	}
 
-	const float cameraSpeed = 0.006f;
+	float cameraSpeed = 0.6f;
+	if (keyboard.KeyIsPressed(VK_SHIFT))
+	{
+		cameraSpeed = 0.6f;
+	}
+	else
+	{
+		cameraSpeed = 0.006f;
+	}
 
 	if (keyboard.KeyIsPressed('W'))
 	{

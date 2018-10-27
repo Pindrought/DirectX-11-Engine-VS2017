@@ -3,6 +3,8 @@
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
 #include "ConstantBuffer.h"
+#include "InstanceBuffer.h"
+#include <SimpleMath.h>
 
 using namespace DirectX;
 
@@ -12,6 +14,7 @@ public:
 	bool Initialize(ID3D11Device * device, ID3D11DeviceContext * deviceContext, ID3D11ShaderResourceView * texture, ConstantBuffer<CB_VS_vertexshader> & cb_vs_vertexshader);
 	void SetTexture(ID3D11ShaderResourceView * texture);
 	void Draw(const XMMATRIX & viewProjectionMatrix);
+	void DrawInstanced(std::vector<XMMATRIX> & matrices, const XMMATRIX & viewProjectionMatrix);
 
 	const XMVECTOR & GetPositionVector() const;
 	const XMFLOAT3 & GetPositionFloat3() const;
@@ -43,6 +46,7 @@ private:
 	ID3D11ShaderResourceView * texture = nullptr;
 	VertexBuffer<Vertex> vertexBuffer;
 	IndexBuffer indexBuffer;
+	InstanceBuffer<XMMATRIX> instanceBuffer;
 
 	XMVECTOR posVector;
 	XMVECTOR rotVector;
@@ -60,4 +64,6 @@ private:
 	XMVECTOR vec_left;
 	XMVECTOR vec_right;
 	XMVECTOR vec_backward;
+
+	SimpleMath::Matrix lastViewProj;
 };

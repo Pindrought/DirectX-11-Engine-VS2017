@@ -50,6 +50,9 @@ bool Model::Initialize(ID3D11Device * device, ID3D11DeviceContext * deviceContex
 	hr = this->indexBuffer.Initialize(this->device, indices, ARRAYSIZE(indices));
 	COM_ERROR_IF_FAILED(hr, "Failed to initialize index buffer.");
 
+	//Instance Buffer
+	this->instanceBuffer.Initialize(this->device, this->deviceContext);
+
 	return true;
 }
 
@@ -70,6 +73,26 @@ void Model::Draw(const XMMATRIX & viewProjectionMatrix)
 	this->deviceContext->IASetVertexBuffers(0, 1, this->vertexBuffer.GetAddressOf(), this->vertexBuffer.StridePtr(), &offset);
 	this->deviceContext->IASetIndexBuffer(this->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 	this->deviceContext->DrawIndexed(this->indexBuffer.BufferSize(), 0, 0);
+}
+void Model::DrawInstanced(std::vector<XMMATRIX> & matrices, const XMMATRIX & viewProjectionMatrix)
+{
+
+	SimpleMath::Matrix viewProjection = viewProjectionMatrix;
+	static bool instanceUpdated = false;
+	if (instanceUpdated == false)
+	{
+		instanceUpdated = true;
+		this->instanceBuffer.UpdateInstanceData(matrices.data(), matrices.size());
+	}
+	
+
+	ID3D11Buffer * vertBuffers[2] = { this->vertexBuffer.Get(), this->instanceBuffer.Get() };
+	UINT strides[2] = { this->vertexBuffer.Stride(), sizeof(XMMATRIX) };
+	const UINT offsets[2] = { 0,0 };
+
+	this->deviceContext->IASetVertexBuffers(0, 2, vertBuffers, strides, offsets);
+	this->deviceContext->IASetIndexBuffer(this->indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+	this->deviceContext->DrawIndexedInstanced(this->indexBuffer.BufferSize(), matrices.size(), 0, 0, 0);
 }
 const XMVECTOR & Model::GetPositionVector() const
 {
