@@ -1,4 +1,5 @@
 #include "Graphics.h"
+#include <fstream>
 
 bool Graphics::Initialize(HWND hwnd, int width, int height)
 {
