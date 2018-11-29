@@ -1,4 +1,5 @@
 #pragma once
+#define NOMINMAX
 #include <DirectXMath.h>
 
 struct Vertex

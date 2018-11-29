@@ -3,12 +3,17 @@
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
 #include "ConstantBuffer.h"
+#include <assimp/Importer.hpp>
+#include <assimp\scene.h>
+#include <assimp\postprocess.h>
+#include "Mesh.h"
 
 using namespace DirectX;
 
 class Model
 {
 public:
+	void ProcessNode(aiNode * node, const aiScene * scene);
 	bool Initialize(ID3D11Device * device, ID3D11DeviceContext * deviceContext, ID3D11ShaderResourceView * texture, ConstantBuffer<CB_VS_vertexshader> & cb_vs_vertexshader);
 	void SetTexture(ID3D11ShaderResourceView * texture);
 	void Draw(const XMMATRIX & viewProjectionMatrix);
@@ -42,6 +47,8 @@ private:
 	ID3D11DeviceContext * deviceContext = nullptr;
 	ConstantBuffer<CB_VS_vertexshader> * cb_vs_vertexshader = nullptr;
 	ID3D11ShaderResourceView * texture = nullptr;
+
+	std::vector<Mesh> meshes;
 
 	VertexBuffer<Vertex> vertexBuffer;
 	IndexBuffer indexBuffer;

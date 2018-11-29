@@ -1,4 +1,22 @@
 #include "Model.h"
+#include <assimp/Importer.hpp>
+#include <assimp\scene.h>
+#include <assimp\postprocess.h>
+
+void Model::ProcessNode(aiNode * node, const aiScene * scene)
+{
+	for (UINT i = 0; i < node->mNumMeshes; i++)
+	{
+		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+		Sleep(1);
+		//meshes.push_back(this->processMesh(mesh, scene));
+	}
+
+	for (UINT i = 0; i < node->mNumChildren; i++)
+	{
+		this->ProcessNode(node->mChildren[i], scene);
+	}
+}
 
 bool Model::Initialize(ID3D11Device * device, ID3D11DeviceContext * deviceContext, ID3D11ShaderResourceView * texture, ConstantBuffer<CB_VS_vertexshader>& cb_vs_vertexshader)
 {
@@ -6,6 +24,14 @@ bool Model::Initialize(ID3D11Device * device, ID3D11DeviceContext * deviceContex
 	this->deviceContext = deviceContext;
 	this->texture = texture;
 	this->cb_vs_vertexshader = &cb_vs_vertexshader;
+	using namespace Assimp;
+	Importer importer;
+	const aiScene * pScene = importer.ReadFile("Data\\Objects\\Nanosuit\\nanosuit.obj", aiProcess_Triangulate |
+												aiProcess_ConvertToLeftHanded);
+	if (pScene != nullptr)
+	{
+		this->ProcessNode(pScene->mRootNode, pScene);
+	}
 
 	try
 	{

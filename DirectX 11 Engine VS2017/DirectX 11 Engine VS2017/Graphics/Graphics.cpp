@@ -44,7 +44,17 @@ void Graphics::RenderFrame()
 	this->deviceContext->PSSetShader(pixelshader.GetShader(), NULL, 0);
 	
 	{ 
-		this->model.Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+		const int rowcount = 50;
+		const int columncount = 50;
+		for (int x = -columncount / 2; x < columncount/2; x++)
+		{
+			for (int y = -rowcount / 2; y < rowcount / 2; y++)
+			{
+				this->model.SetPosition(x * 2, y * 2, 0);
+				this->model.Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+
+			}
+		}
 	}
 
 	//Draw Text
@@ -57,8 +67,10 @@ void Graphics::RenderFrame()
 		fpsCounter = 0;
 		fpsTimer.Restart();
 	}
-	spriteBatch->Begin();
-	spriteFont->DrawString(spriteBatch.get(), StringConverter::StringToWide(fpsString).c_str(), DirectX::XMFLOAT2(0, 0), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f,0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+	XMFLOAT4 color(1.0f, 1.0f, 1.0f, 0.5f);
+	XMVECTOR textColor =	XMLoadFloat4(&color);
+	spriteBatch->Begin(DirectX::SpriteSortMode::SpriteSortMode_Deferred, this->blendState.Get());
+	spriteFont->DrawString(spriteBatch.get(), StringConverter::StringToWide(fpsString).c_str(), DirectX::XMFLOAT2(0, 0), textColor, 0.0f, DirectX::XMFLOAT2(0.0f,0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
 	spriteBatch->End();
 
 	static int counter = 0;

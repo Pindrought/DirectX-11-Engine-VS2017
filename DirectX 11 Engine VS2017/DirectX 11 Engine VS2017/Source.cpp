@@ -14,6 +14,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		return -1;
 	}
 
+	char test = 0x26;
+	char test2 = '&';
+
 	Engine engine;
 	if (engine.Initialize(hInstance, "Title", "MyWindowClass", 800, 600))
 	{

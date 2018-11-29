@@ -1,4 +1,5 @@
 #pragma once
+#define NOMINMAX
 #include "COMException.h"
 #include <Windows.h>
 
