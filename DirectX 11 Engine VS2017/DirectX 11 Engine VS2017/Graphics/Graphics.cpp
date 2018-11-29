@@ -67,9 +67,9 @@ void Graphics::RenderFrame()
 	fpsCounter += 1;
 	if (fpsTimer.GetMilisecondsElapsed() > 1000.0)
 	{
-		//fpsString = "FPS: " + std::to_string(fpsCounter);
+		fpsString = "FPS: " + std::to_string(fpsCounter);
 		msElapsed /= fpsCounter;
-		fpsString = "Time: " + std::to_string(msElapsed);
+		//fpsString = "Time: " + std::to_string(msElapsed);
 		fpsCounter = 0;
 		msElapsed = 0;
 		fpsTimer.Restart();
