@@ -42,11 +42,12 @@ void Graphics::RenderFrame()
 	this->deviceContext->PSSetSamplers(0, 1, this->samplerState.GetAddressOf());
 	this->deviceContext->VSSetShader(vertexshader.GetShader(), NULL, 0);
 	this->deviceContext->PSSetShader(pixelshader.GetShader(), NULL, 0);
-	
-	{ 
+
+	benchmarkTimer.Start();
+	{
 		const int rowcount = 50;
 		const int columncount = 50;
-		for (int x = -columncount / 2; x < columncount/2; x++)
+		for (int x = -columncount / 2; x < columncount / 2; x++)
 		{
 			for (int y = -rowcount / 2; y < rowcount / 2; y++)
 			{
@@ -56,15 +57,21 @@ void Graphics::RenderFrame()
 			}
 		}
 	}
+	benchmarkTimer.Stop();
+	static double msElapsed = 0;
+	msElapsed += benchmarkTimer.GetMilisecondsElapsed();
 
 	//Draw Text
 	static int fpsCounter = 0;
-	static std::string fpsString = "FPS: 0";
+	static std::string fpsString = "N/A";
 	fpsCounter += 1;
 	if (fpsTimer.GetMilisecondsElapsed() > 1000.0)
 	{
-		fpsString = "FPS: " + std::to_string(fpsCounter);
+		//fpsString = "FPS: " + std::to_string(fpsCounter);
+		msElapsed /= fpsCounter;
+		fpsString = "Time: " + std::to_string(msElapsed);
 		fpsCounter = 0;
+		msElapsed = 0;
 		fpsTimer.Restart();
 	}
 	XMFLOAT4 color(1.0f, 1.0f, 1.0f, 0.5f);

@@ -20,6 +20,7 @@ public:
 	Model model;
 
 private:
+	Timer benchmarkTimer;
 	bool InitializeDirectX(HWND hwnd);
 	bool InitializeShaders();
 	bool InitializeScene();
