@@ -50,7 +50,10 @@ private:
 
 	std::vector<Mesh> meshes;
 
-	VertexBuffer<Vertex> vertexBuffer;
+	//VertexBuffer<Vertex> vertexBuffer;
+	VertexBuffer<XMFLOAT3> positions;
+	VertexBuffer<XMFLOAT2> texcoords;
+	VertexBuffer<XMFLOAT3> normals;
 	IndexBuffer indexBuffer;
 
 	XMMATRIX worldMatrix = XMMatrixIdentity();

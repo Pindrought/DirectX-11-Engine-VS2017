@@ -24,33 +24,61 @@ bool Model::Initialize(ID3D11Device * device, ID3D11DeviceContext * deviceContex
 	this->deviceContext = deviceContext;
 	this->texture = texture;
 	this->cb_vs_vertexshader = &cb_vs_vertexshader;
-	using namespace Assimp;
+	/*using namespace Assimp;
 	Importer importer;
 	const aiScene * pScene = importer.ReadFile("Data\\Objects\\Nanosuit\\nanosuit.obj", aiProcess_Triangulate |
 												aiProcess_ConvertToLeftHanded);
 	if (pScene != nullptr)
 	{
 		this->ProcessNode(pScene->mRootNode, pScene);
-	}
+	}*/
 
 	try
 	{
-		//Textured Square
-		Vertex v[] =
+		XMFLOAT3 positionsArray[] =
 		{
-			Vertex(-0.5f,  -0.5f, -0.5f, 0.0f, 1.0f), //FRONT Bottom Left   - [0]
-			Vertex(-0.5f,   0.5f, -0.5f, 0.0f, 0.0f), //FRONT Top Left      - [1]
-			Vertex(0.5f,   0.5f, -0.5f, 1.0f, 0.0f), //FRONT Top Right     - [2]
-			Vertex(0.5f,  -0.5f, -0.5f, 1.0f, 1.0f), //FRONT Bottom Right   - [3]
-			Vertex(-0.5f,  -0.5f, 0.5f, 0.0f, 1.0f), //BACK Bottom Left   - [4]
-			Vertex(-0.5f,   0.5f, 0.5f, 0.0f, 0.0f), //BACK Top Left      - [5]
-			Vertex(0.5f,   0.5f, 0.5f, 1.0f, 0.0f), //BACK Top Right     - [6]
-			Vertex(0.5f,  -0.5f, 0.5f, 1.0f, 1.0f), //BACK Bottom Right   - [7]
+			XMFLOAT3(-0.5f,  -0.5f, -0.5f), //FRONT Bottom Left   - [0]
+			XMFLOAT3(-0.5f,   0.5f, -0.5f), //FRONT Top Left      - [1]
+			XMFLOAT3(0.5f,   0.5f, -0.5f), //FRONT Top Right     - [2]
+			XMFLOAT3(0.5f,  -0.5f, -0.5f), //FRONT Bottom Right   - [3]
+			XMFLOAT3(-0.5f,  -0.5f, 0.5f), //BACK Bottom Left   - [4]
+			XMFLOAT3(-0.5f,   0.5f, 0.5f), //BACK Top Left      - [5]
+			XMFLOAT3(0.5f,   0.5f, 0.5f), //BACK Top Right     - [6]
+			XMFLOAT3(0.5f,  -0.5f, 0.5f ), //BACK Bottom Right   - [7]
 		};
-
+		XMFLOAT2 texcoordsArray[] =
+		{
+			XMFLOAT2( 0.0f, 1.0f), //FRONT Bottom Left   - [0]
+			XMFLOAT2( 0.0f, 0.0f), //FRONT Top Left      - [1]
+			XMFLOAT2( 1.0f, 0.0f), //FRONT Top Right     - [2]
+			XMFLOAT2( 1.0f, 1.0f), //FRONT Bottom Right   - [3]
+			XMFLOAT2( 0.0f, 1.0f), //BACK Bottom Left   - [4]
+			XMFLOAT2( 0.0f, 0.0f), //BACK Top Left      - [5]
+			XMFLOAT2( 1.0f, 0.0f), //BACK Top Right     - [6]
+			XMFLOAT2( 1.0f, 1.0f), //BACK Bottom Right   - [7]
+		};
+		XMFLOAT3 normalsArray[] =
+		{
+			XMFLOAT3(0,0,0),
+			XMFLOAT3(0,0,0),
+			XMFLOAT3(0,0,0),
+			XMFLOAT3(0,0,0),
+			XMFLOAT3(0,0,0),
+			XMFLOAT3(0,0,0),
+			XMFLOAT3(0,0,0),
+			XMFLOAT3(0,0,0),
+		};
+		
 		//Load Vertex Data
-		HRESULT hr = this->vertexBuffer.Initialize(this->device, v, ARRAYSIZE(v));
-		COM_ERROR_IF_FAILED(hr, "Failed to initialize vertex buffer.");
+		HRESULT hr = this->positions.Initialize(this->device, positionsArray, ARRAYSIZE(positionsArray));
+		COM_ERROR_IF_FAILED(hr, "Failed to initialize positions vertex buffer.");
+
+		hr = this->texcoords.Initialize(this->device, texcoordsArray, ARRAYSIZE(texcoordsArray));
+		COM_ERROR_IF_FAILED(hr, "Failed to initialize text coords vertex buffer.");
+
+		hr = this->normals.Initialize(this->device, normalsArray, ARRAYSIZE(normalsArray));
+		COM_ERROR_IF_FAILED(hr, "Failed to initialize normals vertex buffer.");
+
 
 		DWORD indices[] =
 		{
@@ -100,7 +128,10 @@ void Model::Draw(const XMMATRIX & viewProjectionMatrix)
 	this->deviceContext->PSSetShaderResources(0, 1, &this->texture); //Set Texture
 	this->deviceContext->IASetIndexBuffer(this->indexBuffer.Get(), DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0); 
 	UINT offset = 0;
-	this->deviceContext->IASetVertexBuffers(0, 1, this->vertexBuffer.GetAddressOf(), this->vertexBuffer.StridePtr(), &offset);
+	this->deviceContext->IASetVertexBuffers(0, 1, this->positions.GetAddressOf(), this->positions.StridePtr(), &offset);
+	this->deviceContext->IASetVertexBuffers(1, 1, this->texcoords.GetAddressOf(), this->texcoords.StridePtr(), &offset);
+	this->deviceContext->IASetVertexBuffers(2, 1, this->normals.GetAddressOf(), this->normals.StridePtr(), &offset);
+
 	this->deviceContext->DrawIndexed(this->indexBuffer.BufferSize(), 0, 0); //Draw
 }
 

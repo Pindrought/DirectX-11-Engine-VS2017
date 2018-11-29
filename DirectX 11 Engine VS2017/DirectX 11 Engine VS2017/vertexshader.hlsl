@@ -7,6 +7,7 @@ struct VS_INPUT
 {
     float3 inPos : POSITION;
     float2 inTexCoord : TEXCOORD;
+    float3 inNormal : NORMAL;
 };
 
 struct VS_OUTPUT
