@@ -48,14 +48,14 @@ bool Model::Initialize(ID3D11Device * device, ID3D11DeviceContext * deviceContex
 		};
 		XMFLOAT2 texcoordsArray[] =
 		{
-			XMFLOAT2( 0.0f, 1.0f), //FRONT Bottom Left   - [0]
-			XMFLOAT2( 0.0f, 0.0f), //FRONT Top Left      - [1]
-			XMFLOAT2( 1.0f, 0.0f), //FRONT Top Right     - [2]
-			XMFLOAT2( 1.0f, 1.0f), //FRONT Bottom Right   - [3]
+			XMFLOAT2( 0.0f, 1.0f), //FRONT Bottom Left  - [0]
+			XMFLOAT2( 0.0f, 0.0f), //FRONT Top Left     - [1]
+			XMFLOAT2( 1.0f, 0.0f), //FRONT Top Right    - [2]
+			XMFLOAT2( 1.0f, 1.0f), //FRONT Bottom Right - [3]
 			XMFLOAT2( 0.0f, 1.0f), //BACK Bottom Left   - [4]
 			XMFLOAT2( 0.0f, 0.0f), //BACK Top Left      - [5]
 			XMFLOAT2( 1.0f, 0.0f), //BACK Top Right     - [6]
-			XMFLOAT2( 1.0f, 1.0f), //BACK Bottom Right   - [7]
+			XMFLOAT2( 1.0f, 1.0f), //BACK Bottom Right  - [7]
 		};
 		XMFLOAT3 normalsArray[] =
 		{
@@ -128,10 +128,14 @@ void Model::Draw(const XMMATRIX & viewProjectionMatrix)
 	this->deviceContext->PSSetShaderResources(0, 1, &this->texture); //Set Texture
 	this->deviceContext->IASetIndexBuffer(this->indexBuffer.Get(), DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0); 
 	UINT offset = 0;
-	this->deviceContext->IASetVertexBuffers(0, 1, this->positions.GetAddressOf(), this->positions.StridePtr(), &offset);
+	ID3D11Buffer * buffers[] = { this->positions.Get(), this->texcoords.Get(), this->normals.Get() };
+	const UINT strides[] = { this->positions.Stride(), this->texcoords.Stride(), this->normals.Stride() };
+	const UINT offsets[] = { 0,0,0 };
+	this->deviceContext->IASetVertexBuffers(0, 3, buffers, strides, offsets);
+	/*this->deviceContext->IASetVertexBuffers(0, 1, this->positions.GetAddressOf(), this->positions.StridePtr(), &offset);
 	this->deviceContext->IASetVertexBuffers(1, 1, this->texcoords.GetAddressOf(), this->texcoords.StridePtr(), &offset);
 	this->deviceContext->IASetVertexBuffers(2, 1, this->normals.GetAddressOf(), this->normals.StridePtr(), &offset);
-
+*/
 	this->deviceContext->DrawIndexed(this->indexBuffer.BufferSize(), 0, 0); //Draw
 }
 
