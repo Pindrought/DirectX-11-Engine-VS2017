@@ -1,9 +1,10 @@
 #pragma once
 #include "..\\ErrorLogger.h"
-#pragma comment(lib, "D3DCompiler.lib")
 #include <d3d11.h>
 #include <wrl/client.h>
 #include <d3dcompiler.h>
+
+
 
 class VertexShader
 {
