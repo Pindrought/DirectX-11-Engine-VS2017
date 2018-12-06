@@ -23,5 +23,5 @@ void Mesh::Draw()
 	UINT offset = 0;
 	this->deviceContext->IASetVertexBuffers(0, 1, this->vertexbuffer.GetAddressOf(), this->vertexbuffer.StridePtr(), &offset);
 	this->deviceContext->IASetIndexBuffer(this->indexbuffer.Get(), DXGI_FORMAT::DXGI_FORMAT_R32_UINT, 0);
-	this->deviceContext->DrawIndexed(this->indexbuffer.BufferSize(), 0, 0);
+	this->deviceContext->DrawIndexed(this->indexbuffer.IndexCount(), 0, 0);
 }
