@@ -43,7 +43,7 @@ void Graphics::RenderFrame()
 	this->deviceContext->PSSetShader(pixelshader.GetShader(), NULL, 0);
 	
 	{ 
-		this->model.Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+		this->gameObject.Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 	}
 
 	//Draw Text
@@ -263,7 +263,7 @@ bool Graphics::InitializeScene()
 		hr = this->cb_ps_pixelshader.Initialize(this->device.Get(), this->deviceContext.Get());
 		COM_ERROR_IF_FAILED(hr, "Failed to initialize constant buffer.");
 
-		if (!model.Initialize("Data\\Objects\\Nanosuit\\Nanosuit.obj", this->device.Get(), this->deviceContext.Get(), this->grassTexture.Get(), this->cb_vs_vertexshader))
+		if (!gameObject.Initialize("Data\\Objects\\Nanosuit\\Nanosuit.obj", this->device.Get(), this->deviceContext.Get(), this->grassTexture.Get(), this->cb_vs_vertexshader))
 			return false;
 
 		camera.SetPosition(0.0f, 0.0f, -2.0f);
