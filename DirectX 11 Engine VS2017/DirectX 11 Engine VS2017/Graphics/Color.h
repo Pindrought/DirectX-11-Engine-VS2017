@@ -1,87 +1,37 @@
 #pragma once
+typedef unsigned char BYTE;
+
 class Color
 {
 public:
-	constexpr Color()
-		:
-		value()
-	{}
-	constexpr Color(unsigned int val)
-		:
-		value(val)
-	{}
-	constexpr Color(unsigned char r, unsigned char g, unsigned char b)
-		:
-		Color((r << 16u) | (g << 8u) | b)
-	{}
-	constexpr Color(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
-		:
-		Color((a << 24u) | (r << 16u) | (g << 8u) | b)
-	{}
-	constexpr Color(const Color& src)
-		:
-		value(src.value)
-	{}
-	Color& operator=(const Color& src)
-	{
-		value = src.value;
-		return *this;
-	}
-	bool operator==(const Color& rhs) const
-	{
-		return (value << 8u) == (rhs.value << 8u);
-	}
-	bool operator!=(const Color& rhs) const
-	{
-		return !(*this == rhs);
-	}
+	Color();
+	Color(unsigned int val);
+	Color(BYTE r, BYTE g, BYTE b);
+	Color(BYTE r, BYTE g, BYTE b, BYTE a);
+	Color(const Color& src);
 
-	constexpr unsigned char GetA() const
-	{
-		return (value >> 24u);
-	}
-	void SetA(unsigned char a)
-	{
-		value = (value & 0x00FFFFFF) | (a << 24u);
-	}
+	Color& operator=(const Color& src);
+	bool operator==(const Color& rhs) const;
+	bool operator!=(const Color& rhs) const;
 
-	constexpr unsigned char GetR() const
-	{
-		return (value >> 16u) & 0xFFu;
-	}
-	void SetR(unsigned char r)
-	{
-		value = (value & 0xFF00FFFF) | (r << 16u);
-	}
+	constexpr BYTE GetR() const;
+	void SetR(BYTE r);
 
-	constexpr unsigned char GetG() const
-	{
-		return (value >> 8u) & 0xFFu;
-	}
-	void SetG(unsigned char g)
-	{
-		value = (value & 0xFFFF00FF) | (g << 8u);
-	}
+	constexpr BYTE GetG() const;
+	void SetG(BYTE g);
 
-	constexpr unsigned char GetB() const
-	{
-		return (value) & 0xFFu;
-	}
-	void SetB(unsigned char b)
-	{
-		value = (value & 0xFFFFFF00) | b;
-	}
+	constexpr BYTE GetB() const;
+	void SetB(BYTE b);
 
-	constexpr unsigned int GetValue() const
-	{
-		return value;
-	}
-	constexpr void SetValue(unsigned int newval)
-	{
-		value = newval;
-	}
+	constexpr BYTE GetA() const;
+	void SetA(BYTE a);
+
 private:
-	unsigned int value;
+	union
+	{
+		BYTE rgba[4];
+		unsigned int color;
+	};
 };
 
 namespace Colors

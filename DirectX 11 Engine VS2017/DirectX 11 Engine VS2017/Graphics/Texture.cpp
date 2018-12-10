@@ -66,7 +66,7 @@ void Texture::Initialize1x1ColorTexture(ID3D11Device * device, const Color & col
 void Texture::InitializeColorTexture(ID3D11Device * device, const Color * colorData, UINT width, UINT height, aiTextureType type)
 {
 	this->type = type;
-	CD3D11_TEXTURE2D_DESC textureDesc(DXGI_FORMAT_B8G8R8A8_UNORM, width, height);
+	CD3D11_TEXTURE2D_DESC textureDesc(DXGI_FORMAT_R8G8B8A8_UNORM, width, height);
 	ID3D11Texture2D * p2DTexture = nullptr;
 	D3D11_SUBRESOURCE_DATA initialData{};
 	initialData.pSysMem = colorData;
