@@ -1,0 +1,9 @@
+Blue Cube No Texture: Jpres
+
+Orange Embedded Texture: Stefan Schindler https://www.turbosquid.com/Search/Artists/Stefan-Schindler
+https://www.turbosquid.com/FullPreview/Index.cfm/ID/756550
+
+Orange Disk Texture ^Same
+
+person_embedded_indexed.blend: Unknown original source - found it in assimp bug report
+
