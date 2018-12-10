@@ -20,6 +20,8 @@ class Texture
 public:
 	Texture(ID3D11Device * device, const Color & color, aiTextureType type);
 	Texture(ID3D11Device * device, const Color * colorData, UINT width, UINT height, aiTextureType type); //Generate texture of specific color data
+	Texture(ID3D11Device * device, const std::string & filePath, aiTextureType type);
+
 	aiTextureType GetType();
 	ID3D11ShaderResourceView * GetTextureResourceView();
 	ID3D11ShaderResourceView ** GetTextureResourceViewAddress();
