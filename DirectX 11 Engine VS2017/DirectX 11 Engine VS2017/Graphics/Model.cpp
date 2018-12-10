@@ -1,11 +1,12 @@
 #include "Model.h"
+#include <assimp/Exceptional.h>
 
 bool Model::Initialize(const std::string & filePath, ID3D11Device * device, ID3D11DeviceContext * deviceContext, ID3D11ShaderResourceView * texture, ConstantBuffer<CB_VS_vertexshader>& cb_vs_vertexshader)
 {
 	this->device = device;
 	this->deviceContext = deviceContext;
-	this->texture = texture;
 	this->cb_vs_vertexshader = &cb_vs_vertexshader;
+	this->directory = StringHelper::GetDirectoryFromPath(filePath);
 
 	try
 	{
@@ -21,11 +22,6 @@ bool Model::Initialize(const std::string & filePath, ID3D11Device * device, ID3D
 	return true;
 }
 
-void Model::SetTexture(ID3D11ShaderResourceView * texture)
-{
-	this->texture = texture;
-}
-
 void Model::Draw(const XMMATRIX & worldMatrix, const XMMATRIX & viewProjectionMatrix)
 {
 	//Update Constant buffer with WVP Matrix
@@ -33,8 +29,6 @@ void Model::Draw(const XMMATRIX & worldMatrix, const XMMATRIX & viewProjectionMa
 	this->cb_vs_vertexshader->data.mat = XMMatrixTranspose(this->cb_vs_vertexshader->data.mat);
 	this->cb_vs_vertexshader->ApplyChanges();
 	this->deviceContext->VSSetConstantBuffers(0, 1, this->cb_vs_vertexshader->GetAddressOf());
-
-	this->deviceContext->PSSetShaderResources(0, 1, &this->texture); //Set Texture
 
 	for (int i = 0; i < meshes.size(); i++)
 	{
@@ -47,11 +41,14 @@ bool Model::LoadModel(const std::string & filePath)
 	Assimp::Importer importer;
 
 	const aiScene* pScene = importer.ReadFile(filePath,
-												aiProcess_Triangulate |
-												aiProcess_ConvertToLeftHanded);
+		aiProcess_Triangulate |
+		aiProcess_ConvertToLeftHanded);
 
 	if (pScene == nullptr)
+	{
+		ErrorLogger::Log(importer.GetErrorString());
 		return false;
+	}
 
 	this->ProcessNode(pScene->mRootNode, pScene);
 	return true;
@@ -104,5 +101,129 @@ Mesh Model::ProcessMesh(aiMesh * mesh, const aiScene * scene)
 			indices.push_back(face.mIndices[j]);
 	}
 
-	return Mesh(this->device, this->deviceContext, vertices, indices);
+	assert(mesh->mMaterialIndex >= 0);
+	std::vector<Texture> textures;
+	aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+	std::vector<Texture> diffuseTextures = LoadMaterialTextures(material, aiTextureType::aiTextureType_DIFFUSE, scene);
+	textures.insert(textures.end(), diffuseTextures.begin(), diffuseTextures.end());
+
+	return Mesh(this->device, this->deviceContext, vertices, indices, textures);
+}
+
+TextureStorageType Model::DetermineTextureStorageType(const aiScene* pScene, aiMaterial* pMat, unsigned int index, aiTextureType textureType)
+{
+	if (pMat->GetTextureCount(textureType) == 0)
+		return TextureStorageType::None;
+
+	aiString path;
+	pMat->GetTexture(textureType, index, &path);
+	std::string texturePath = path.C_Str();
+	//Check if texture is an embedded indexed texture by seeing if the file path is an index #
+	if (texturePath[0] == '*')
+	{
+		if (pScene->mTextures[0]->mHeight == 0)
+		{
+			return TextureStorageType::EmbeddedIndexCompressed;
+		}
+		else
+		{
+			assert("SUPPORT DOES NOT EXIST YET FOR INDEXED NON COMPRESSED TEXTURES!" && 0);
+			return TextureStorageType::EmbeddedIndexNonCompressed;
+		}
+	}
+	//Check if texture is an embedded texture but not indexed (path will be the texture's name instead of #)
+	if (auto pTex = pScene->GetEmbeddedTexture(texturePath.c_str()))
+	{
+		if (pTex->mHeight == 0)
+		{
+			return TextureStorageType::EmbeddedCompressed;
+		}
+		else
+		{
+			assert("SUPPORT DOES NOT EXIST YET FOR EMBEDDED NON COMPRESSED TEXTURES!" && 0);
+			return TextureStorageType::EmbeddedNonCompressed;
+		}
+	}
+	//Lastly check if texture is a filepath by checking for period before extension name
+	if (texturePath.find('.') != std::string::npos)
+	{
+		return TextureStorageType::Disk;
+	}
+
+	return TextureStorageType::None; // No texture exists
+}
+
+std::vector<Texture> Model::LoadMaterialTextures(aiMaterial* pMaterial, aiTextureType textureType, const aiScene* pScene)
+{
+	std::vector<Texture> materialTextures;
+	TextureStorageType storetype = TextureStorageType::Invalid;
+	unsigned int textureCount = pMaterial->GetTextureCount(textureType);
+
+	if (textureCount == 0) //If there are no textures
+	{
+		storetype = TextureStorageType::None;
+		aiColor3D aiColor(0.0f, 0.0f, 0.0f);
+		switch (textureType)
+		{
+		case aiTextureType_DIFFUSE:
+			pMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, aiColor);
+			if (aiColor.IsBlack()) //If color = black, just use grey
+			{
+				materialTextures.push_back(Texture(this->device, Colors::UnloadedTextureColor, textureType));
+				return materialTextures;
+			}
+			materialTextures.push_back(Texture(this->device, Color(aiColor.r * 255, aiColor.g * 255, aiColor.b * 255), textureType));
+			return materialTextures;
+		}
+	}
+	else //If there are textures, 
+	{
+		for (UINT i = 0; i < textureCount; i++)
+		{
+			aiString path;
+			pMaterial->GetTexture(textureType, i, &path);
+			TextureStorageType storetype = DetermineTextureStorageType(pScene, pMaterial, i, textureType);
+
+			switch (storetype)
+			{
+			case TextureStorageType::EmbeddedIndexCompressed:
+			{
+				int index = GetTextureIndex(&path);
+				Texture embeddedIndexedTexture(this->device,
+					reinterpret_cast<uint8_t*>(pScene->mTextures[index]->pcData),
+					pScene->mTextures[index]->mWidth,
+					textureType);
+				materialTextures.push_back(embeddedIndexedTexture);
+				break;
+			}
+			case TextureStorageType::EmbeddedCompressed:
+			{
+				const aiTexture * pTexture = pScene->GetEmbeddedTexture(path.C_Str());
+				Texture embeddedTexture(this->device,
+										reinterpret_cast<uint8_t*>(pTexture->pcData),
+										pTexture->mWidth,
+										textureType);
+				materialTextures.push_back(embeddedTexture);
+				break;
+			}
+			case TextureStorageType::Disk:
+			{
+				std::string filename = this->directory + '\\' + path.C_Str();
+				Texture diskTexture(this->device, filename, textureType);
+				materialTextures.push_back(diskTexture);
+				break;
+			}
+			}
+		}
+	}
+
+	assert(materialTextures.size() != 0);
+
+	return materialTextures;
+}
+
+int Model::GetTextureIndex(aiString * pStr)
+{
+	assert(pStr->length >= 2);
+	return atoi(&pStr->C_Str()[1]);
 }
