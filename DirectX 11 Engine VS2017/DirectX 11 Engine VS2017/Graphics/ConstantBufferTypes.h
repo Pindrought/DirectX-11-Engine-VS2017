@@ -3,10 +3,17 @@
 
 struct CB_VS_vertexshader
 {
-	DirectX::XMMATRIX mat;
+	DirectX::XMMATRIX wvpMatrix;
+	DirectX::XMMATRIX worldMatrix;
 };
 
-struct CB_PS_pixelshader
+struct CB_PS_light
 {
-	float alpha = 1.0f;
+	DirectX::XMFLOAT3 ambientLightColor;
+	float ambientLightStrength;
+	DirectX::XMFLOAT3 directionalLightColor;
+	float directionalLightStrength;
+	DirectX::XMFLOAT3 directionalLightDirection;
+	float padding;
+	DirectX::XMFLOAT3 viewPosition;
 };
