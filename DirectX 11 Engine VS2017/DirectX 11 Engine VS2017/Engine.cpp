@@ -52,6 +52,12 @@ void Engine::Update()
 	if (keyboard.KeyIsPressed(VK_SHIFT))
 		cameraSpeed = 0.6f;
 
+	if (keyboard.KeyIsPressed('C'))
+	{
+		gfx.lightBulb.SetPosition(gfx.camera.GetPositionFloat3());
+		gfx.lightBulb.AdjustPosition(gfx.camera.GetForwardVector() * 0.5);
+	}
+
 	if (keyboard.KeyIsPressed('W'))
 	{
 		this->gfx.camera.AdjustPosition(this->gfx.camera.GetForwardVector() * cameraSpeed * dt);

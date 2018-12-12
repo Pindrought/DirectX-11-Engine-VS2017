@@ -18,7 +18,7 @@ public:
 	void RenderFrame();
 	Camera camera;
 	GameObject gameObject;
-
+	GameObject lightBulb;
 private:
 	bool InitializeDirectX(HWND hwnd);
 	bool InitializeShaders();

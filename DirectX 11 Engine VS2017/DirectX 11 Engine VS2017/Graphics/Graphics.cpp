@@ -29,6 +29,9 @@ bool Graphics::Initialize(HWND hwnd, int width, int height)
 void Graphics::RenderFrame()
 {
 	cb_ps_light.data.viewPosition = this->camera.GetPositionFloat3();
+	this->cb_ps_light.data.dynamicLightPosition = this->lightBulb.GetPositionFloat3();
+	this->cb_ps_light.ApplyChanges();
+
 	cb_ps_light.ApplyChanges();
 	float bgcolor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	this->deviceContext->ClearRenderTargetView(this->renderTargetView.Get(), bgcolor);
@@ -47,6 +50,7 @@ void Graphics::RenderFrame()
 
 	{ 
 		this->gameObject.Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+		this->lightBulb.Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 	}
 
 	//Draw Text
@@ -72,7 +76,10 @@ void Graphics::RenderFrame()
 	ImGui::Begin("Light Controls");
 	ImGui::DragFloat3("Ambient Light RGB", &this->cb_ps_light.data.ambientLightColor.x, 0.01f, 0.0f, 1.0f);
 	ImGui::DragFloat("Ambient Light Strength", &this->cb_ps_light.data.ambientLightStrength, 0.01f, 0.0f, 1.0f);
-	ImGui::DragFloat("Directional Light Strength", &this->cb_ps_light.data.directionalLightStrength, 0.01f, 0.0f, 1.0f);
+	ImGui::DragFloat3("Dynamic Light RGB", &this->cb_ps_light.data.dynamicLightColor.x, 0.01f, 0.0f, 1.0f);
+	ImGui::DragFloat("Diffuse Light Strength", &this->cb_ps_light.data.dynamicLightDiffuseStrength, 0.01f, 0.0f, 1.0f);
+	ImGui::DragFloat("Specular Light Strength", &this->cb_ps_light.data.dynamicLightSpecularStrength, 0.01f, 0.0f, 5.0f);
+
 	ImGui::End();
 	//Assemble Together Draw Data
 	ImGui::Render();
@@ -272,18 +279,21 @@ bool Graphics::InitializeScene()
 
 		this->cb_ps_light.data.ambientLightColor = XMFLOAT3(1.0f, 1.0f, 1.0f);
 		this->cb_ps_light.data.ambientLightStrength = 0.2f;
-		this->cb_ps_light.data.directionalLightColor = XMFLOAT3(0.0f, 1.0f, 1.0f);
-		this->cb_ps_light.data.directionalLightStrength = 0.5f;
-		DirectX::XMFLOAT3 lightDirfloat3(0.0f, 0.0f, 1.0f);
-		DirectX::XMVECTOR lightDir = DirectX::XMLoadFloat3(&lightDirfloat3);
-		lightDir = DirectX::XMVector3Normalize(lightDir);
-		DirectX::XMStoreFloat3(&this->cb_ps_light.data.directionalLightDirection, lightDir);
+		this->cb_ps_light.data.dynamicLightColor = XMFLOAT3(1.0f, 1.0f, 1.0f);
+		this->cb_ps_light.data.dynamicLightDiffuseStrength = 0.5f;
+		this->cb_ps_light.data.dynamicLightPosition = XMFLOAT3(0, 5, 0);
+		this->cb_ps_light.data.dynamicLightSpecularStrength = 0.5f;
 		this->cb_ps_light.ApplyChanges();
 
-		if (!gameObject.Initialize("Data\\Objects\\Nanosuit/Nanosuit.obj", this->device.Get(), this->deviceContext.Get(), this->cb_vs_vertexshader))
+		if (!gameObject.Initialize("Data\\Objects\\Sponza\\Sponza.gltf", this->device.Get(), this->deviceContext.Get(), this->cb_vs_vertexshader))
+			return false;
+		
+		if (!lightBulb.Initialize("Data\\Objects\\testlight.fbx", this->device.Get(), this->deviceContext.Get(), this->cb_vs_vertexshader))
 			return false;
 
-		camera.SetPosition(0.0f, 0.0f, -2.0f);
+		this->lightBulb.SetRotation(XM_PIDIV2, 0, 0);
+
+		camera.SetPosition(0.0f, 0.0f, 0.0f);
 		camera.SetProjectionValues(90.0f, static_cast<float>(windowWidth) / static_cast<float>(windowHeight), 0.1f, 3000.0f);
 	}
 	catch (COMException & exception)

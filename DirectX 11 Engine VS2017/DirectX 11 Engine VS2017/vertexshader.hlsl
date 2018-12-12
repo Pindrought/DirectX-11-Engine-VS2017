@@ -26,7 +26,7 @@ VS_OUTPUT main(VS_INPUT input)
     VS_OUTPUT output;
     output.outPosition = mul(float4(input.inPos, 1.0f), wvpMatrix);
     output.outTexCoord = input.inTexCoord;
-    output.outNormal = mul(float4(input.inNormal, 1.0f), worldMatrix);
+    output.outNormal = normalize(mul(float4(input.inNormal, 0.0f), worldMatrix));
     output.outWorldPos = mul(float4(input.inPos, 1.0f), worldMatrix);
 
     return output;
