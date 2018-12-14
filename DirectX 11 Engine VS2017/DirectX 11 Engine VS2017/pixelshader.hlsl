@@ -30,13 +30,15 @@ float4 main(PS_INPUT input) : SV_TARGET
 
     float3 ambientLight = ambientLightColor * ambientLightStrength;
 
+    float att1 = pow((distance(input.inWorldPos, dynamicLightPosition)), 2) + 1;
+
     float3 diffuseLight = max(dot(input.inNormal, -lightDirection), 0.0) * dynamicLightColor * dynamicLightDiffuseStrength;
     
-    float specularColor = pow(max(dot(viewDirection, reflectDirection), 0.0), 8);
-    float3 specularLight = dynamicLightSpecularStrength * specularColor * dynamicLightColor;
+    float specularColor = pow(max(dot(viewDirection, reflectDirection), 0.0), 4);
+    float3 specularLight = dynamicLightSpecularStrength * specularColor * dynamicLightColor / att1;
     
-    float3 lightColor = saturate(ambientLight + diffuseLight) + specularLight;
+    float3 lightColor = saturate(ambientLight + diffuseLight);
 
-    float3 finalColor = (lightColor) * sampleColor;
+    float3 finalColor = (lightColor) * sampleColor + specularLight;
     return float4(finalColor, 1.0f);
 }

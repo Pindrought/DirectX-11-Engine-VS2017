@@ -4,10 +4,6 @@
 class GameObject
 {
 public:
-	bool Initialize(const std::string & filePath, ID3D11Device * device, ID3D11DeviceContext * deviceContext, ConstantBuffer<CB_VS_vertexshader> & cb_vs_vertexshader);
-
-	void Draw(const XMMATRIX & viewProjectionMatrix);
-
 	const XMVECTOR & GetPositionVector() const;
 	const XMFLOAT3 & GetPositionFloat3() const;
 	const XMVECTOR & GetRotationVector() const;
@@ -31,12 +27,8 @@ public:
 	const XMVECTOR & GetRightVector();
 	const XMVECTOR & GetBackwardVector();
 	const XMVECTOR & GetLeftVector();
-private:
-	Model model;
-	void UpdateWorldMatrix();
-
-	XMMATRIX worldMatrix = XMMatrixIdentity();
-
+protected:
+	virtual void UpdateMatrix();
 	XMVECTOR posVector;
 	XMVECTOR rotVector;
 	XMFLOAT3 pos;
