@@ -7,3 +7,8 @@ Orange Disk Texture ^Same
 
 person_embedded_indexed.blend: Unknown original source - found it in assimp bug report
 
+Dodge Challenger:
+Author: v_chernobay https://www.turbosquid.com/Search/Artists/v_chernobay
+Note: I optimized the version in samples so it would load faster.
+https://www.turbosquid.com/FullPreview/Index.cfm/ID/733118
+
