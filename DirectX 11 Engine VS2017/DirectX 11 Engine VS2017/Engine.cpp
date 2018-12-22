@@ -1,4 +1,5 @@
 #include "Engine.h"
+#include <fstream>
 
 bool Engine::Initialize(HINSTANCE hInstance, std::string window_title, std::string window_class, int width, int height)
 {
@@ -89,6 +90,24 @@ void Engine::Update()
 
 void Engine::RenderFrame()
 {
+	static Timer t;
+	static int frameCount = 0;
+	static double totalTime = 0;
+	t.Start();
 	this->gfx.RenderFrame();
+	t.Stop();
+	frameCount += 1;
+	totalTime += t.GetMilisecondsElapsed();
+	if (frameCount >= 1000)
+	{
+		std::ofstream outFile("renderdata.txt", std::ios::app);
+		outFile << totalTime << std::endl;
+		outFile.close();
+		gfx.renderTimePer1kFrames = totalTime;
+		frameCount = 0;
+		totalTime = 0;
+		
+	}
+
 }
 

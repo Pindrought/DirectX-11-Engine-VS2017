@@ -10,6 +10,7 @@
 #include "ImGUI\\imgui_impl_win32.h"
 #include "ImGUI\\imgui_impl_dx11.h"
 #include "RenderableGameObject.h"
+#include "Light.h"
 
 class Graphics
 {
@@ -18,7 +19,8 @@ public:
 	void RenderFrame();
 	Camera camera;
 	RenderableGameObject gameObject;
-	RenderableGameObject lightBulb;
+	Light lightBulb;
+	double renderTimePer1kFrames = 0.0f;
 private:
 	bool InitializeDirectX(HWND hwnd);
 	bool InitializeShaders();
@@ -33,7 +35,6 @@ private:
 	PixelShader pixelshader;
 	ConstantBuffer<CB_VS_vertexshader> cb_vs_vertexshader;
 	ConstantBuffer<CB_PS_light> cb_ps_light;
-
 
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthStencilView;
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> depthStencilBuffer;

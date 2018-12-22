@@ -63,8 +63,10 @@ void Graphics::RenderFrame()
 		fpsCounter = 0;
 		fpsTimer.Restart();
 	}
+	std::string renderTimeString = "Render Time Per 1k: " + std::to_string(renderTimePer1kFrames);
 	spriteBatch->Begin();
 	spriteFont->DrawString(spriteBatch.get(), StringHelper::StringToWide(fpsString).c_str(), DirectX::XMFLOAT2(0, 0), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f,0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+	spriteFont->DrawString(spriteBatch.get(), StringHelper::StringToWide(renderTimeString).c_str(), DirectX::XMFLOAT2(0, 30), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
 	spriteBatch->End();
 
 	static int counter = 0;
@@ -77,8 +79,12 @@ void Graphics::RenderFrame()
 	ImGui::DragFloat3("Ambient Light RGB", &this->cb_ps_light.data.ambientLightColor.x, 0.01f, 0.0f, 1.0f);
 	ImGui::DragFloat("Ambient Light Strength", &this->cb_ps_light.data.ambientLightStrength, 0.01f, 0.0f, 1.0f);
 	ImGui::DragFloat3("Dynamic Light RGB", &this->cb_ps_light.data.dynamicLightColor.x, 0.01f, 0.0f, 1.0f);
-	ImGui::DragFloat("Diffuse Light Strength", &this->cb_ps_light.data.dynamicLightDiffuseStrength, 0.01f, 0.0f, 1.0f);
-	ImGui::DragFloat("Specular Light Strength", &this->cb_ps_light.data.dynamicLightSpecularStrength, 0.01f, 0.0f, 5.0f);
+	ImGui::DragFloat("Diffuse Light Strength", &this->cb_ps_light.data.dynamicLightDiffuseStrength, 0.01f, 0.0f, 10.0f);
+	ImGui::DragFloat("Light Attenuation Constant Factor", &this->cb_ps_light.data.lightAttenuationConstantFactor, 0.01f, 0.01f, 10.0f);
+	ImGui::DragFloat("Light Attenuation Linear Factor", &this->cb_ps_light.data.lightAttenuationLinearFactor, 0.01f, 0.00f, 10.0f);
+	ImGui::DragFloat("Light Attenuation Exponential Factor", &this->cb_ps_light.data.lightAttenuationExponentialFactor, 0.01f, 0.00f, 10.0f);
+
+	//ImGui::DragFloat("Specular Light Strength", &this->cb_ps_light.data.dynamicLightSpecularStrength, 0.01f, 0.0f, 5.0f);
 
 	ImGui::End();
 	//Assemble Together Draw Data
@@ -283,12 +289,16 @@ bool Graphics::InitializeScene()
 		this->cb_ps_light.data.dynamicLightDiffuseStrength = 0.5f;
 		this->cb_ps_light.data.dynamicLightPosition = XMFLOAT3(0, 5, 0);
 		this->cb_ps_light.data.dynamicLightSpecularStrength = 0.5f;
+		this->cb_ps_light.data.lightAttenuationConstantFactor = 1.0f;
+		this->cb_ps_light.data.lightAttenuationLinearFactor = 1.0f;
+		this->cb_ps_light.data.lightAttenuationExponentialFactor = 1.0f;
 		this->cb_ps_light.ApplyChanges();
+
 
 		if (!gameObject.Initialize("Data\\Objects\\Sponza\\Sponza.gltf", this->device.Get(), this->deviceContext.Get(), this->cb_vs_vertexshader))
 			return false;
 		
-		if (!lightBulb.Initialize("Data\\Objects\\testlight.fbx", this->device.Get(), this->deviceContext.Get(), this->cb_vs_vertexshader))
+		if (!lightBulb.Initialize(this->device.Get(), this->deviceContext.Get(), this->cb_vs_vertexshader))
 			return false;
 
 		this->lightBulb.SetRotation(XM_PIDIV2, 0, 0);

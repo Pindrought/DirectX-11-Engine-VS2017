@@ -15,5 +15,9 @@ struct CB_PS_light
 	float dynamicLightDiffuseStrength;
 	DirectX::XMFLOAT3 dynamicLightPosition;
 	float dynamicLightSpecularStrength;
+	float lightAttenuationConstantFactor;
+	float lightAttenuationLinearFactor;
+	float lightAttenuationExponentialFactor;
+	float padding;
 	DirectX::XMFLOAT3 viewPosition;
 };

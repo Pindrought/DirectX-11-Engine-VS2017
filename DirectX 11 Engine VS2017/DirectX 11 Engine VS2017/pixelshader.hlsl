@@ -6,6 +6,10 @@ cbuffer lightbuffer : register(b0)
     float dynamicLightDiffuseStrength;
     float3 dynamicLightPosition;
     float dynamicLightSpecularStrength;
+    float lightAttenuationConstantFactor;
+    float lightAttenuationLinearFactor;
+    float lightAttenuationExponentialFactor;
+    float padding;
     float3 viewPos; //camera position
 }
 
@@ -24,21 +28,23 @@ float4 main(PS_INPUT input) : SV_TARGET
 {
     
     float3 sampleColor = objTexture.Sample(objSamplerState, input.inTexCoord);
+
     float3 lightDirection = normalize(input.inWorldPos - dynamicLightPosition); //Normalized Vector from light->pixel
     float3 viewDirection = normalize(viewPos - input.inWorldPos);
     float3 reflectDirection = reflect(lightDirection, input.inNormal);
 
     float3 ambientLight = ambientLightColor * ambientLightStrength;
 
-    float att1 = pow((distance(input.inWorldPos, dynamicLightPosition)), 2) + 1;
+    float lightDistance = distance(input.inWorldPos, dynamicLightPosition);
+    float attenuation = lightAttenuationConstantFactor + lightAttenuationLinearFactor + lightDistance + lightAttenuationExponentialFactor * pow(lightDistance, 2);
 
-    float3 diffuseLight = max(dot(input.inNormal, -lightDirection), 0.0) * dynamicLightColor * dynamicLightDiffuseStrength;
+    float3 diffuseLight = max(dot(input.inNormal, -lightDirection), 0.0) * dynamicLightColor * dynamicLightDiffuseStrength / attenuation;
     
-    float specularColor = pow(max(dot(viewDirection, reflectDirection), 0.0), 4);
-    float3 specularLight = dynamicLightSpecularStrength * specularColor * dynamicLightColor / att1;
+    //float specularColor = pow(max(dot(viewDirection, reflectDirection), 0.0), 4);
+    //float3 specularLight = dynamicLightSpecularStrength * specularColor * dynamicLightColor / att1;
     
     float3 lightColor = saturate(ambientLight + diffuseLight);
 
-    float3 finalColor = (lightColor) * sampleColor + specularLight;
+    float3 finalColor = (lightColor) * sampleColor;
     return float4(finalColor, 1.0f);
 }

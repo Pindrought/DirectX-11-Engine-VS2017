@@ -164,6 +164,7 @@
     <ClCompile Include="Graphics\ImGui\imgui_impl_dx11.cpp" />
     <ClCompile Include="Graphics\ImGui\imgui_impl_win32.cpp" />
     <ClCompile Include="Graphics\ImGui\imgui_widgets.cpp" />
+    <ClCompile Include="Graphics\Light.cpp" />
     <ClCompile Include="Graphics\RenderableGameObject.cpp" />
     <ClCompile Include="Keyboard\KeyboardClass.cpp" />
     <ClCompile Include="Keyboard\KeyboardEvent.cpp" />
@@ -203,6 +204,7 @@
     <ClInclude Include="Keyboard\KeyboardEvent.h" />
     <ClInclude Include="Graphics\Model.h" />
     <ClInclude Include="Graphics\Mesh.h" />
+    <ClInclude Include="Graphics\Light.h" />
     <ClInclude Include="Mouse\MouseClass.h" />
     <ClInclude Include="Mouse\MouseEvent.h" />
     <ClInclude Include="Graphics\RenderableGameObject.h" />
