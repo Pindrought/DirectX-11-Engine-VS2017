@@ -61,6 +61,8 @@ void Model::ProcessNode(aiNode * node, const aiScene * scene, const XMMATRIX & p
 	for (UINT i = 0; i < node->mNumMeshes; i++)
 	{
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+		aiString name = mesh->mName;
+		std::string strName = name.C_Str();
 		meshes.push_back(this->ProcessMesh(mesh, scene, nodeMatrixTransform));
 	}
 

@@ -295,9 +295,10 @@ bool Graphics::InitializeScene()
 		this->cb_ps_light.ApplyChanges();
 
 
-		if (!gameObject.Initialize("Data\\Objects\\Sponza\\Sponza.gltf", this->device.Get(), this->deviceContext.Get(), this->cb_vs_vertexshader))
+		if (!gameObject.Initialize("Data\\Objects\\woman.fbx", this->device.Get(), this->deviceContext.Get(), this->cb_vs_vertexshader))
 			return false;
 		
+
 		if (!lightBulb.Initialize(this->device.Get(), this->deviceContext.Get(), this->cb_vs_vertexshader))
 			return false;
 
