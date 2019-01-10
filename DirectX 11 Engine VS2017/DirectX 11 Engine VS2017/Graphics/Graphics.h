@@ -17,12 +17,15 @@ public:
 	bool Initialize(HWND hwnd, int width, int height);
 	void RenderFrame();
 	Camera camera;
-	RenderableGameObject gameObject;
+	RenderableGameObject greenArrow;
+	RenderableGameObject pinkArrow;
 
 private:
 	bool InitializeDirectX(HWND hwnd);
 	bool InitializeShaders();
 	bool InitializeScene();
+
+	double maxfps = 60;
 
 	Microsoft::WRL::ComPtr<ID3D11Device> device;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> deviceContext;

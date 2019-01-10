@@ -1,4 +1,5 @@
 #include "Graphics.h"
+#include "..\\FPSLimiter.h"
 
 bool Graphics::Initialize(HWND hwnd, int width, int height)
 {
@@ -45,7 +46,9 @@ void Graphics::RenderFrame()
 	this->deviceContext->PSSetShader(pixelshader.GetShader(), NULL, 0);
 	
 	{ 
-		this->gameObject.Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+		this->greenArrow.Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+		this->pinkArrow.Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+
 	}
 
 	//Draw Text
@@ -71,13 +74,24 @@ void Graphics::RenderFrame()
 	ImGui::Begin("Light Controls");
 	ImGui::DragFloat3("Ambient Light Color", &this->cb_ps_light.data.ambientLightColor.x, 0.01f, 0.0f, 1.0f);
 	ImGui::DragFloat("Ambient Light Strength", &this->cb_ps_light.data.ambientLightStrength, 0.01f, 0.0f, 1.0f);
+	ImGui::InputDouble("Max FPS:", &maxfps, 1.0, 2.0);
+	ImGui::NewLine();
+	XMVECTOR greenForwardVector = greenArrow.GetForwardVector();
+	XMFLOAT3 greenArrowForwardFloat3;
+	XMStoreFloat3(&greenArrowForwardFloat3, greenForwardVector);
+	ImGui::Text("Green Normal Forward Vector: %f, %f, %f", greenArrowForwardFloat3.x, greenArrowForwardFloat3.y, greenArrowForwardFloat3.z);
+	ImGui::Text("Pink Normal Forward Vector: 0, 0, 1");
+	XMVECTOR dotProduct = XMVector3Dot(greenArrow.GetForwardVector(), pinkArrow.GetForwardVector());
+	ImGui::Text("Dot Product Result: %f", dotProduct.m128_f32[0]);
 	ImGui::End();
 	//Assemble Together Draw Data
 	ImGui::Render();
 	//Render Draw Data
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
-	this->swapchain->Present(0, NULL);
+	this->swapchain->Present(1, NULL);
+	static FPSLimiter limiter;
+	limiter.Pulse(maxfps);
 }
 
 bool Graphics::InitializeDirectX(HWND hwnd)
@@ -271,11 +285,15 @@ bool Graphics::InitializeScene()
 		this->cb_ps_light.data.ambientLightColor = XMFLOAT3(1.0f, 1.0f, 1.0f);
 		this->cb_ps_light.data.ambientLightStrength = 1.0f;
 
-		if (!gameObject.Initialize("Data\\Objects\\Nanosuit\\Nanosuit.obj", this->device.Get(), this->deviceContext.Get(), this->cb_vs_vertexshader))
+		if (!greenArrow.Initialize("Data\\Objects\\greenarrow.fbx", this->device.Get(), this->deviceContext.Get(), this->cb_vs_vertexshader))
 			return false;
 
-		camera.SetPosition(0.0f, 0.0f, -2.0f);
+		if (!pinkArrow.Initialize("Data\\Objects\\pinkarrow.fbx", this->device.Get(), this->deviceContext.Get(), this->cb_vs_vertexshader))
+			return false;
+
 		camera.SetProjectionValues(90.0f, static_cast<float>(windowWidth) / static_cast<float>(windowHeight), 0.1f, 3000.0f);
+		camera.SetPosition(0.0f, 25.0f, 5.0f);
+		camera.SetLookAtPos(XMFLOAT3(0, 0, 5));
 	}
 	catch (COMException & exception)
 	{

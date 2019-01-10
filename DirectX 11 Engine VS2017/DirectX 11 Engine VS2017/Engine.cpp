@@ -46,7 +46,7 @@ void Engine::Update()
 		}
 	}
 
-	this->gfx.gameObject.AdjustRotation(0.0f, 0.001f*dt, 0.0f);
+	this->gfx.greenArrow.AdjustRotation(0.0f, 0.0002f*dt, 0.0f);
 
 	float cameraSpeed = 0.006f;
 
