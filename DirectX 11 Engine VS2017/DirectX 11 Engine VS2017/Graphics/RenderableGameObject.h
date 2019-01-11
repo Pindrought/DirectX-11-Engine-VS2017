@@ -8,7 +8,7 @@ public:
 
 	void Draw(const XMMATRIX & viewProjectionMatrix);
 
-private:
+protected:
 	Model model;
 	void UpdateMatrix() override;
 

@@ -22,13 +22,14 @@ public:
 	void AdjustRotation(const XMFLOAT3 & rot);
 	void AdjustRotation(float x, float y, float z);
 	void SetLookAtPos(XMFLOAT3 lookAtPos);
-	const XMVECTOR & GetForwardVector();
-	const XMVECTOR & GetRightVector();
-	const XMVECTOR & GetBackwardVector();
-	const XMVECTOR & GetLeftVector();
+	const XMVECTOR & GetForwardVector(bool omitY = false);
+	const XMVECTOR & GetRightVector(bool omitY = false);
+	const XMVECTOR & GetBackwardVector(bool omitY = false);
+	const XMVECTOR & GetLeftVector(bool omitY = false);
 
 protected:
 	virtual void UpdateMatrix();
+	void UpdateDirectionVectors();
 
 	XMVECTOR posVector;
 	XMVECTOR rotVector;
@@ -45,4 +46,9 @@ protected:
 	XMVECTOR vec_left;
 	XMVECTOR vec_right;
 	XMVECTOR vec_backward;
+
+	XMVECTOR vec_forward_noY;
+	XMVECTOR vec_left_noY;
+	XMVECTOR vec_right_noY;
+	XMVECTOR vec_backward_noY;
 };
