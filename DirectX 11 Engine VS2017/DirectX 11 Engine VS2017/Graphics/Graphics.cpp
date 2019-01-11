@@ -28,6 +28,13 @@ bool Graphics::Initialize(HWND hwnd, int width, int height)
 
 void Graphics::RenderFrame()
 {
+	this->cb_ps_light.data.dynamicLightCount = lights.size();
+	for (int i = 0; i < lights.size(); i++)
+	{
+		this->cb_ps_light.data.dynamicLights[i].dynamicLightPosition = lights[i]->GetPositionFloat3();
+		this->cb_ps_light.data.dynamicLights[i].dynamicLightColor = lights[i]->lightColor;
+		this->cb_ps_light.data.dynamicLights[i].dynamicLightStrength = lights[i]->lightStrength;
+	}
 	this->cb_ps_light.ApplyChanges();
 	this->deviceContext->PSSetConstantBuffers(0, 1, this->cb_ps_light.GetAddressOf());
 
@@ -46,6 +53,13 @@ void Graphics::RenderFrame()
 	
 	{ 
 		this->gameObject.Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+		this->gameObject2.Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+	}
+	//Draw visible light bulbs
+	{
+		this->deviceContext->PSSetShader(pixelshader_nolight.GetShader(), NULL, 0);
+		for (int i=0; i<lights.size(); i++)
+			this->lights[i]->Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
 	}
 
 	//Draw Text
@@ -71,6 +85,38 @@ void Graphics::RenderFrame()
 	ImGui::Begin("Light Controls");
 	ImGui::DragFloat3("Ambient Light Color", &this->cb_ps_light.data.ambientLightColor.x, 0.01f, 0.0f, 1.0f);
 	ImGui::DragFloat("Ambient Light Strength", &this->cb_ps_light.data.ambientLightStrength, 0.01f, 0.0f, 1.0f);
+	if (ImGui::Button("Add Light (Max 10)"))
+	{
+		if (lights.size() < 10)
+		{
+			lights.push_back(std::make_unique<Light>());
+			int newIndex = lights.size() - 1;
+			lights[newIndex]->Initialize(this->device.Get(), this->deviceContext.Get(), this->cb_vs_vertexshader);
+		}
+	}
+	//ImGui::SameLine();
+	if (ImGui::Button("Remove Light"))
+	{
+		if (lights.size() > 0)
+		{
+			lights.erase(lights.begin() + lights.size() - 1);
+		}
+		if (lightAccessIndex > (lights.size() - 1))
+		{
+			lightAccessIndex = lights.size() - 1;
+		}
+		if (lightAccessIndex < 0)
+			lightAccessIndex = 0;
+	}
+	ImGui::DragInt("Light Index Access", &this->lightAccessIndex, 1.0f, 0, lights.size());
+	for (int i = 0; i < lights.size(); i++)
+	{
+		std::string colorLabel = "Dynamic Light Color #" + std::to_string(i);
+		ImGui::DragFloat3(colorLabel.c_str(), &this->lights[i]->lightColor.x, 0.01f, 0.0f, 1.0f);
+		std::string strengthLabel = "Dynamic Light Strength #" + std::to_string(i);
+		ImGui::DragFloat(strengthLabel.c_str(), &this->lights[i]->lightStrength, 0.01f, 0.0f, 1.0f);
+	}
+	
 	ImGui::End();
 	//Assemble Together Draw Data
 	ImGui::Render();
@@ -243,6 +289,8 @@ bool Graphics::InitializeShaders()
 	if (!pixelshader.Initialize(this->device, shaderfolder + L"pixelshader.cso"))
 		return false;
 
+	if (!pixelshader_nolight.Initialize(this->device, shaderfolder + L"pixelshader_nolight.cso"))
+		return false;
 
 	return true;
 }
@@ -268,11 +316,13 @@ bool Graphics::InitializeScene()
 		hr = this->cb_ps_light.Initialize(this->device.Get(), this->deviceContext.Get());
 		COM_ERROR_IF_FAILED(hr, "Failed to initialize constant buffer.");
 
-		this->cb_ps_light.data.ambientLightColor = XMFLOAT3(1.0f, 1.0f, 1.0f);
-		this->cb_ps_light.data.ambientLightStrength = 1.0f;
-
 		if (!gameObject.Initialize("Data\\Objects\\Nanosuit\\Nanosuit.obj", this->device.Get(), this->deviceContext.Get(), this->cb_vs_vertexshader))
 			return false;
+
+		if (!gameObject2.Initialize("Data\\Objects\\Nanosuit\\Nanosuit.obj", this->device.Get(), this->deviceContext.Get(), this->cb_vs_vertexshader))
+			return false;
+
+		gameObject2.SetPosition(XMFLOAT3(0, 0, -8.0f));
 
 		camera.SetPosition(0.0f, 0.0f, -2.0f);
 		camera.SetProjectionValues(90.0f, static_cast<float>(windowWidth) / static_cast<float>(windowHeight), 0.1f, 3000.0f);

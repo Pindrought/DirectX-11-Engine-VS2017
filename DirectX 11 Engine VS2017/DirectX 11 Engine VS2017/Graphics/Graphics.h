@@ -10,6 +10,7 @@
 #include "ImGUI\\imgui_impl_win32.h"
 #include "ImGUI\\imgui_impl_dx11.h"
 #include "RenderableGameObject.h"
+#include "Light.h"
 
 class Graphics
 {
@@ -18,7 +19,9 @@ public:
 	void RenderFrame();
 	Camera camera;
 	RenderableGameObject gameObject;
-
+	RenderableGameObject gameObject2;
+	std::vector<std::unique_ptr<Light>> lights;
+	int lightAccessIndex = 0;
 private:
 	bool InitializeDirectX(HWND hwnd);
 	bool InitializeShaders();
@@ -31,6 +34,8 @@ private:
 
 	VertexShader vertexshader;
 	PixelShader pixelshader;
+	PixelShader pixelshader_nolight;
+
 	ConstantBuffer<CB_VS_vertexshader> cb_vs_vertexshader;
 	ConstantBuffer<CB_PS_light> cb_ps_light;
 

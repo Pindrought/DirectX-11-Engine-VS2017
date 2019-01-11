@@ -80,7 +80,16 @@ void Engine::Update()
 		this->gfx.camera.AdjustPosition(0.0f, -cameraSpeed * dt, 0.0f);
 	}
 
-
+	if (keyboard.KeyIsPressed('C'))
+	{
+		if (this->gfx.lightAccessIndex >= 0 && this->gfx.lightAccessIndex < this->gfx.lights.size())
+		{
+			XMVECTOR newLightPosition = this->gfx.camera.GetPositionVector();
+			newLightPosition += (this->gfx.camera.GetForwardVector());
+			this->gfx.lights[this->gfx.lightAccessIndex]->SetPosition(newLightPosition);
+			this->gfx.lights[this->gfx.lightAccessIndex]->SetRotation(this->gfx.camera.GetRotationFloat3());
+		}
+	}
 
 }
 
