@@ -6,6 +6,10 @@ cbuffer lightBuffer : register(b0)
     float3 dynamicLightColor;
     float dynamicLightStrength;
     float3 dynamicLightPosition;
+
+    float dynamicLightAttenuation_a;
+    float dynamicLightAttenuation_b;
+    float dynamicLightAttenuation_c;
 }
 
 struct PS_INPUT
@@ -31,6 +35,12 @@ float4 main(PS_INPUT input) : SV_TARGET
     float3 vectorToLight = normalize(dynamicLightPosition - input.inWorldPos);
 
     float3 diffuseLightIntensity = max(dot(vectorToLight, input.inNormal), 0);
+    
+    float distanceToLight = distance(dynamicLightPosition, input.inWorldPos);
+
+    float attenuationFactor = 1 / (dynamicLightAttenuation_a + dynamicLightAttenuation_b * distanceToLight + dynamicLightAttenuation_c * pow(distanceToLight, 2));
+
+    diffuseLightIntensity *= attenuationFactor;
 
     float3 diffuseLight = diffuseLightIntensity * dynamicLightStrength * dynamicLightColor;
 
