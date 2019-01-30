@@ -5,6 +5,8 @@ bool Model::Initialize(const std::string & filePath, ID3D11Device * device, ID3D
 	this->device = device;
 	this->deviceContext = deviceContext;
 	this->cb_vs_vertexshader = &cb_vs_vertexshader;
+	this->type = ResourceType::Model;
+	this->name = filePath;
 
 	try
 	{
