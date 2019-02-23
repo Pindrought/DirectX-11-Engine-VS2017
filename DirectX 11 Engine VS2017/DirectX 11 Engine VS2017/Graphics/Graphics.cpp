@@ -306,3 +306,13 @@ bool Graphics::InitializeScene()
 	}
 	return true;
 }
+
+Graphics::~Graphics()
+{
+	if ( nullptr != ImGui::GetCurrentContext())
+	{
+		ImGui_ImplDX11_Shutdown();
+		ImGui_ImplWin32_Shutdown();
+		ImGui::DestroyContext();
+	}
+}
