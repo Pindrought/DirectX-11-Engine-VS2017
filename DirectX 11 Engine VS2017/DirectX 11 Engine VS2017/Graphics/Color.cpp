@@ -27,13 +27,13 @@ Color::Color(const Color& src)
 
 Color& Color::operator=(const Color& src)
 {
-	this->color = src.color;
+	color = src.color;
 	return *this;
 }
 
 bool Color::operator==(const Color& rhs) const
 {
-	return (this->color == rhs.color);
+	return (color == rhs.color);
 }
 
 bool Color::operator!=(const Color& rhs) const
@@ -43,36 +43,36 @@ bool Color::operator!=(const Color& rhs) const
 
 constexpr BYTE Color::GetR() const
 {
-	return this->rgba[0];
+	return rgba[0];
 }
 void Color::SetR(BYTE r)
 {
-	this->rgba[0] = r;
+	rgba[0] = r;
 }
 
 constexpr BYTE Color::GetG() const
 {
-	return this->rgba[1];
+	return rgba[1];
 }
 void Color::SetG(BYTE g)
 {
-	this->rgba[1] = g;
+	rgba[1] = g;
 }
 
 constexpr BYTE Color::GetB() const
 {
-	return this->rgba[2];
+	return rgba[2];
 }
 void Color::SetB(BYTE b)
 {
-	this->rgba[2] = b;
+	rgba[2] = b;
 }
 
 constexpr BYTE Color::GetA() const
 {
-	return this->rgba[3];
+	return rgba[3];
 }
 void Color::SetA(BYTE a)
 {
-	this->rgba[3] = a;
+	rgba[3] = a;
 }

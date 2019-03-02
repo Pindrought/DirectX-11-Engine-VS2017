@@ -1,10 +1,11 @@
 #include "Graphics.h"
+#include "PipelineManager.h"
 
 bool Graphics::Initialize(HWND hwnd, int width, int height)
 {
-	this->windowWidth = width;
-	this->windowHeight = height;
-	this->fpsTimer.Start();
+	windowWidth = width;
+	windowHeight = height;
+	fpsTimer.Start();
 
 	if (!InitializeDirectX(hwnd))
 		return false;
@@ -20,7 +21,7 @@ bool Graphics::Initialize(HWND hwnd, int width, int height)
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
 	ImGui_ImplWin32_Init(hwnd);
-	ImGui_ImplDX11_Init(this->device.Get(), this->deviceContext.Get());
+	ImGui_ImplDX11_Init(device.Get(), deviceContext.Get());
 	ImGui::StyleColorsDark();
 
 	return true;
@@ -28,72 +29,80 @@ bool Graphics::Initialize(HWND hwnd, int width, int height)
 
 void Graphics::RenderFrame()
 {
-	this->cb_ps_light.data.dynamicLightColor = light.lightColor;
-	this->cb_ps_light.data.dynamicLightStrength = light.lightStrength;
-	this->cb_ps_light.data.dynamicLightPosition = light.GetPositionFloat3();
-	this->cb_ps_light.data.dynamicLightAttenuation_a = light.attenuation_a;
-	this->cb_ps_light.data.dynamicLightAttenuation_b = light.attenuation_b;
-	this->cb_ps_light.data.dynamicLightAttenuation_c = light.attenuation_c;
-	this->cb_ps_light.ApplyChanges();
-	this->deviceContext->PSSetConstantBuffers(0, 1, this->cb_ps_light.GetAddressOf());
+	cb_ps_light.data.dynamicLightColor = light.lightColor;
+	cb_ps_light.data.dynamicLightStrength = light.lightStrength;
+	cb_ps_light.data.dynamicLightPosition = light.GetPositionFloat3();
+	cb_ps_light.data.dynamicLightAttenuation_a = light.attenuation_a;
+	cb_ps_light.data.dynamicLightAttenuation_b = light.attenuation_b;
+	cb_ps_light.data.dynamicLightAttenuation_c = light.attenuation_c;
+	cb_ps_light.ApplyChanges();
+	deviceContext->PSSetConstantBuffers(0, 1, cb_ps_light.GetAddressOf());
 
 	float bgcolor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	this->deviceContext->ClearRenderTargetView(this->renderTargetView.Get(), bgcolor);
-	this->deviceContext->ClearDepthStencilView(this->depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	deviceContext->ClearRenderTargetView(renderTargetView.Get(), bgcolor);
+	deviceContext->ClearDepthStencilView(depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-	this->deviceContext->IASetInputLayout(this->vertexshader.GetInputLayout());
-	this->deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	this->deviceContext->RSSetState(this->rasterizerState.Get());
-	this->deviceContext->OMSetDepthStencilState(this->depthStencilState.Get(), 0);
-	this->deviceContext->OMSetBlendState(NULL, NULL, 0xFFFFFFFF);
-	this->deviceContext->PSSetSamplers(0, 1, this->samplerState.GetAddressOf());
-	this->deviceContext->VSSetShader(vertexshader.GetShader(), NULL, 0);
-	this->deviceContext->PSSetShader(pixelshader.GetShader(), NULL, 0);
-	
-	{ 
-		this->gameObject.Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+	deviceContext->PSSetSamplers(0, 1, samplerState.GetAddressOf());
+	PipelineManager::NewFrame();
+	PipelineManager::SetInputLayout(vertexshader->GetInputLayout());
+	PipelineManager::SetDepthStencilState(depthStencilState.Get());
+	PipelineManager::SetBlendState(nullptr);
+	PipelineManager::SetRasterizerState(rasterizerState.Get());
+	PipelineManager::SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	PipelineManager::SetPixelShader(pixelshader->GetShader());
+	PipelineManager::SetVertexShader(vertexshader->GetShader());
+
+	PixelShader * shader = nullptr;
+	PipelineManager::GetResource(L"ps_3d", shader);
+	PipelineManager::SetPixelShader(shader->GetShader());
+
+	{
+		for (auto & object : gameObjects)
+		{
+			object.Draw(camera3D.GetViewMatrix() * camera3D.GetProjectionMatrix());
+		}
 	}
 	{
-		this->deviceContext->PSSetShader(pixelshader_nolight.GetShader(), NULL, 0);
-		this->light.Draw(camera.GetViewMatrix() * camera.GetProjectionMatrix());
+		PipelineManager::SetPixelShader(pixelshader_nolight->GetShader());
+		light.Draw(camera3D.GetViewMatrix() * camera3D.GetProjectionMatrix());
 	}
 
-	//Draw Text
-	static int fpsCounter = 0;
-	static std::string fpsString = "FPS: 0";
-	fpsCounter += 1;
-	if (fpsTimer.GetMilisecondsElapsed() > 1000.0)
-	{
-		fpsString = "FPS: " + std::to_string(fpsCounter);
-		fpsCounter = 0;
-		fpsTimer.Restart();
-	}
-	spriteBatch->Begin();
-	spriteFont->DrawString(spriteBatch.get(), StringHelper::StringToWide(fpsString).c_str(), DirectX::XMFLOAT2(0, 0), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f,0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
-	spriteBatch->End();
+	////Draw Text
+	//static int fpsCounter = 0;
+	//static std::wstring fpsString = L"FPS: 0";
+	//fpsCounter += 1;
+	//if (fpsTimer.GetMilisecondsElapsed() > 1000.0)
+	//{
+	//	fpsString = L"FPS: " + std::to_wstring(fpsCounter);
+	//	fpsCounter = 0;
+	//	fpsTimer.Restart();
+	//}
+	//spriteBatch->Begin();
+	//spriteFont->DrawString(spriteBatch.get(), fpsString.c_str(), DirectX::XMFLOAT2(0, 0), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f,0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+	//spriteBatch->End();
 
-	static int counter = 0;
-	// Start the Dear ImGui frame
-	ImGui_ImplDX11_NewFrame();
-	ImGui_ImplWin32_NewFrame();
-	ImGui::NewFrame();
-	//Create ImGui Test Window
-	ImGui::Begin("Light Controls");
-	ImGui::DragFloat3("Ambient Light Color", &this->cb_ps_light.data.ambientLightColor.x, 0.01f, 0.0f, 1.0f);
-	ImGui::DragFloat("Ambient Light Strength", &this->cb_ps_light.data.ambientLightStrength, 0.01f, 0.0f, 1.0f);
-	ImGui::NewLine();
-	ImGui::DragFloat3("Dynamic Light Color", &this->light.lightColor.x, 0.01f, 0.0f, 10.0f);
-	ImGui::DragFloat("Dynamic Light Strength", &this->light.lightStrength, 0.01f, 0.0f, 10.0f);
-	ImGui::DragFloat("Dynamic Light Attenuation A", &this->light.attenuation_a, 0.01f, 0.1f, 10.0f);
-	ImGui::DragFloat("Dynamic Light Attenuation B", &this->light.attenuation_b, 0.01f, 0.0f, 10.0f);
-	ImGui::DragFloat("Dynamic Light Attenuation C", &this->light.attenuation_c, 0.01f, 0.0f, 10.0f);
-	ImGui::End();
-	//Assemble Together Draw Data
-	ImGui::Render();
-	//Render Draw Data
-	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+	//static int counter = 0;
+	//// Start the Dear ImGui frame
+	//ImGui_ImplDX11_NewFrame();
+	//ImGui_ImplWin32_NewFrame();
+	//ImGui::NewFrame();
+	////Create ImGui Test Window
+	//ImGui::Begin("Light Controls");
+	//ImGui::DragFloat3("Ambient Light Color", &cb_ps_light.data.ambientLightColor.x, 0.01f, 0.0f, 1.0f);
+	//ImGui::DragFloat("Ambient Light Strength", &cb_ps_light.data.ambientLightStrength, 0.01f, 0.0f, 1.0f);
+	//ImGui::NewLine();
+	//ImGui::DragFloat3("Dynamic Light Color", &light.lightColor.x, 0.01f, 0.0f, 10.0f);
+	//ImGui::DragFloat("Dynamic Light Strength", &light.lightStrength, 0.01f, 0.0f, 10.0f);
+	//ImGui::DragFloat("Dynamic Light Attenuation A", &light.attenuation_a, 0.01f, 0.1f, 10.0f);
+	//ImGui::DragFloat("Dynamic Light Attenuation B", &light.attenuation_b, 0.01f, 0.0f, 10.0f);
+	//ImGui::DragFloat("Dynamic Light Attenuation C", &light.attenuation_c, 0.01f, 0.0f, 10.0f);
+	//ImGui::End();
+	////Assemble Together Draw Data
+	//ImGui::Render();
+	////Render Draw Data
+	//ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
-	this->swapchain->Present(0, NULL);
+	swapchain->Present(0, NULL);
 }
 
 bool Graphics::InitializeDirectX(HWND hwnd)
@@ -104,14 +113,14 @@ bool Graphics::InitializeDirectX(HWND hwnd)
 
 		if (adapters.size() < 1)
 		{
-			ErrorLogger::Log("No IDXGI Adapters found.");
+			ErrorLogger::Log(L"No IDXGI Adapters found.");
 			return false;
 		}
 
 		DXGI_SWAP_CHAIN_DESC scd = { 0 };
 
-		scd.BufferDesc.Width = this->windowWidth;
-		scd.BufferDesc.Height = this->windowHeight;
+		scd.BufferDesc.Width = windowWidth;
+		scd.BufferDesc.Height = windowHeight;
 		scd.BufferDesc.RefreshRate.Numerator = 60;
 		scd.BufferDesc.RefreshRate.Denominator = 1;
 		scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -137,54 +146,58 @@ bool Graphics::InitializeDirectX(HWND hwnd)
 			0, //# OF FEATURE LEVELS IN ARRAY
 			D3D11_SDK_VERSION,
 			&scd, //Swapchain description
-			this->swapchain.GetAddressOf(), //Swapchain Address
-			this->device.GetAddressOf(), //Device Address
+			swapchain.GetAddressOf(), //Swapchain Address
+			device.GetAddressOf(), //Device Address
 			NULL, //Supported feature level
-			this->deviceContext.GetAddressOf()); //Device Context Address
+			deviceContext.GetAddressOf()); //Device Context Address
 
-		COM_ERROR_IF_FAILED(hr, "Failed to create device and swapchain.");
+		COM_ERROR_IF_FAILED(hr, L"Failed to create device and swapchain.");
+
+		PipelineManager::RegisterDevice(device);
+		PipelineManager::RegisterDeviceContext(deviceContext);
+
 
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> backBuffer;
-		hr = this->swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(backBuffer.GetAddressOf()));
-		COM_ERROR_IF_FAILED(hr, "GetBuffer Failed.");
+		hr = swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(backBuffer.GetAddressOf()));
+		COM_ERROR_IF_FAILED(hr, L"GetBuffer Failed.");
 
-		hr = this->device->CreateRenderTargetView(backBuffer.Get(), NULL, this->renderTargetView.GetAddressOf());
-		COM_ERROR_IF_FAILED(hr, "Failed to create render target view.");
+		hr = device->CreateRenderTargetView(backBuffer.Get(), NULL, renderTargetView.GetAddressOf());
+		COM_ERROR_IF_FAILED(hr, L"Failed to create render target view.");
 
 		//Describe our Depth/Stencil Buffer
-		CD3D11_TEXTURE2D_DESC depthStencilTextureDesc(DXGI_FORMAT_D24_UNORM_S8_UINT, this->windowWidth, this->windowHeight);
+		CD3D11_TEXTURE2D_DESC depthStencilTextureDesc(DXGI_FORMAT_D24_UNORM_S8_UINT, windowWidth, windowHeight);
 		depthStencilTextureDesc.MipLevels = 1;
 		depthStencilTextureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 
-		hr = this->device->CreateTexture2D(&depthStencilTextureDesc, NULL, this->depthStencilBuffer.GetAddressOf());
-		COM_ERROR_IF_FAILED(hr, "Failed to create depth stencil buffer.");
+		hr = device->CreateTexture2D(&depthStencilTextureDesc, NULL, depthStencilBuffer.GetAddressOf());
+		COM_ERROR_IF_FAILED(hr, L"Failed to create depth stencil buffer.");
 
-		hr = this->device->CreateDepthStencilView(this->depthStencilBuffer.Get(), NULL, this->depthStencilView.GetAddressOf());
-		COM_ERROR_IF_FAILED(hr, "Failed to create depth stencil view.");
+		hr = device->CreateDepthStencilView(depthStencilBuffer.Get(), NULL, depthStencilView.GetAddressOf());
+		COM_ERROR_IF_FAILED(hr, L"Failed to create depth stencil view.");
 
-		this->deviceContext->OMSetRenderTargets(1, this->renderTargetView.GetAddressOf(), this->depthStencilView.Get());
+		deviceContext->OMSetRenderTargets(1, renderTargetView.GetAddressOf(), depthStencilView.Get());
 
 		//Create depth stencil state
 		CD3D11_DEPTH_STENCIL_DESC depthstencildesc(D3D11_DEFAULT);
 		depthstencildesc.DepthFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_LESS_EQUAL;
 
-		hr = this->device->CreateDepthStencilState(&depthstencildesc, this->depthStencilState.GetAddressOf());
-		COM_ERROR_IF_FAILED(hr, "Failed to create depth stencil state.");
+		hr = device->CreateDepthStencilState(&depthstencildesc, depthStencilState.GetAddressOf());
+		COM_ERROR_IF_FAILED(hr, L"Failed to create depth stencil state.");
 
 		//Create & set the Viewport
-		CD3D11_VIEWPORT viewport(0.0f, 0.0f, static_cast<float>(this->windowWidth), static_cast<float>(this->windowHeight));;
-		this->deviceContext->RSSetViewports(1, &viewport);
+		CD3D11_VIEWPORT viewport(0.0f, 0.0f, static_cast<float>(windowWidth), static_cast<float>(windowHeight));;
+		deviceContext->RSSetViewports(1, &viewport);
 
 		//Create Rasterizer State
 		CD3D11_RASTERIZER_DESC rasterizerDesc(D3D11_DEFAULT);
-		hr = this->device->CreateRasterizerState(&rasterizerDesc, this->rasterizerState.GetAddressOf());
-		COM_ERROR_IF_FAILED(hr, "Failed to create rasterizer state.");
+		hr = device->CreateRasterizerState(&rasterizerDesc, rasterizerState.GetAddressOf());
+		COM_ERROR_IF_FAILED(hr, L"Failed to create rasterizer state.");
 
 		//Create Rasterizer State for culling front
 		CD3D11_RASTERIZER_DESC rasterizerDesc_CullFront(D3D11_DEFAULT);
 		rasterizerDesc_CullFront.CullMode = D3D11_CULL_MODE::D3D11_CULL_FRONT;
-		hr = this->device->CreateRasterizerState(&rasterizerDesc_CullFront, this->rasterizerState_CullFront.GetAddressOf());
-		COM_ERROR_IF_FAILED(hr, "Failed to create rasterizer state.");
+		hr = device->CreateRasterizerState(&rasterizerDesc_CullFront, rasterizerState_CullFront.GetAddressOf());
+		COM_ERROR_IF_FAILED(hr, L"Failed to create rasterizer state.");
 
 		//Create Blend State
 		D3D11_RENDER_TARGET_BLEND_DESC rtbd = { 0 };
@@ -200,19 +213,19 @@ bool Graphics::InitializeDirectX(HWND hwnd)
 		D3D11_BLEND_DESC blendDesc = { 0 };
 		blendDesc.RenderTarget[0] = rtbd;
 
-		hr = this->device->CreateBlendState(&blendDesc, this->blendState.GetAddressOf());
-		COM_ERROR_IF_FAILED(hr, "Failed to create blend state.");
+		hr = device->CreateBlendState(&blendDesc, blendState.GetAddressOf());
+		COM_ERROR_IF_FAILED(hr, L"Failed to create blend state.");
 
-		spriteBatch = std::make_unique<DirectX::SpriteBatch>(this->deviceContext.Get());
-		spriteFont = std::make_unique<DirectX::SpriteFont>(this->device.Get(), L"Data\\Fonts\\comic_sans_ms_16.spritefont");
+		spriteBatch = std::make_unique<DirectX::SpriteBatch>(deviceContext.Get());
+		spriteFont = std::make_unique<DirectX::SpriteFont>(device.Get(), L"Data\\Fonts\\comic_sans_ms_16.spritefont");
 
 		//Create sampler description for sampler state
 		CD3D11_SAMPLER_DESC sampDesc(D3D11_DEFAULT);
 		sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 		sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
 		sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-		hr = this->device->CreateSamplerState(&sampDesc, this->samplerState.GetAddressOf()); //Create sampler state
-		COM_ERROR_IF_FAILED(hr, "Failed to create sampler state.");
+		hr = device->CreateSamplerState(&sampDesc, samplerState.GetAddressOf()); //Create sampler state
+		COM_ERROR_IF_FAILED(hr, L"Failed to create sampler state.");
 	}
 	catch (COMException & exception)
 	{
@@ -252,17 +265,25 @@ bool Graphics::InitializeShaders()
 	};
 
 	UINT numElements = ARRAYSIZE(layout);
+	
+	if (!vertexshader->Initialize(shaderfolder + L"vertexshader.cso", layout, numElements))
+		return false;
+	
+	PipelineManager::RegisterResource(L"vs_3d", vertexshader);
 
-	if (!vertexshader.Initialize(this->device, shaderfolder + L"vertexshader.cso", layout, numElements))
+	if (!vertexshader2->Initialize(shaderfolder + L"vertexshader2.cso", layout, numElements))
 		return false;
 
-	if (!pixelshader.Initialize(this->device, shaderfolder + L"pixelshader.cso"))
+	if (!pixelshader->Initialize(shaderfolder + L"pixelshader.cso"))
 		return false;
 
-	if (!pixelshader_nolight.Initialize(this->device, shaderfolder + L"pixelshader_nolight.cso"))
+	PipelineManager::RegisterResource(L"ps_3d", pixelshader);
+
+	if (!pixelshader_nolight->Initialize(shaderfolder + L"pixelshader_nolight.cso"))
 		return false;
 
-
+	PipelineManager::RegisterResource(L"ps_3d_nolight", pixelshader_nolight);
+	
 	return true;
 }
 
@@ -270,34 +291,35 @@ bool Graphics::InitializeScene()
 {
 	try
 	{
-		//Load Texture
-		HRESULT hr = DirectX::CreateWICTextureFromFile(this->device.Get(), L"Data\\Textures\\seamless_grass.jpg", nullptr, grassTexture.GetAddressOf());
-		COM_ERROR_IF_FAILED(hr, "Failed to create wic texture from file.");
-
-		hr = DirectX::CreateWICTextureFromFile(this->device.Get(), L"Data\\Textures\\pinksquare.jpg", nullptr, pinkTexture.GetAddressOf());
-		COM_ERROR_IF_FAILED(hr, "Failed to create wic texture from file.");
-
-		hr = DirectX::CreateWICTextureFromFile(this->device.Get(), L"Data\\Textures\\seamless_pavement.jpg", nullptr, pavementTexture.GetAddressOf());
-		COM_ERROR_IF_FAILED(hr, "Failed to create wic texture from file.");
-
 		//Initialize Constant Buffer(s)
-		hr = this->cb_vs_vertexshader.Initialize(this->device.Get(), this->deviceContext.Get());
-		COM_ERROR_IF_FAILED(hr, "Failed to initialize constant buffer.");
+		HRESULT hr = cb_vs_vertexshader.Initialize();
+		COM_ERROR_IF_FAILED(hr, L"Failed to initialize constant buffer.");
 
-		hr = this->cb_ps_light.Initialize(this->device.Get(), this->deviceContext.Get());
-		COM_ERROR_IF_FAILED(hr, "Failed to initialize constant buffer.");
+		hr = cb_ps_light.Initialize();
+		COM_ERROR_IF_FAILED(hr, L"Failed to initialize constant buffer.");
 
-		this->cb_ps_light.data.ambientLightColor = XMFLOAT3(1.0f, 1.0f, 1.0f);
-		this->cb_ps_light.data.ambientLightStrength = 1.0f;
+		cb_ps_light.data.ambientLightColor = XMFLOAT3(1.0f, 1.0f, 1.0f);
+		cb_ps_light.data.ambientLightStrength = 1.0f;
 
-		if (!gameObject.Initialize("Data\\Objects\\Nanosuit\\Nanosuit.obj", this->device.Get(), this->deviceContext.Get(), this->cb_vs_vertexshader))
+		gameObjects.resize(1);
+		float xPos = 0.0f;
+		for (auto & object : gameObjects)
+		{
+			/*if (!object.Initialize("Data\\Objects\\Nanosuit\\Nanosuit.obj", cb_vs_vertexshader))
+				return false;*/
+			if (!object.Initialize("Data\\Objects\\Samples/person_embeddedindexed.blend", cb_vs_vertexshader))
+				return false;
+			object.SetPosition(xPos, 0.0f, 0.0f);
+			xPos += 5.0f;
+		}
+
+		if (!light.Initialize(cb_vs_vertexshader))
 			return false;
 
-		if (!light.Initialize(this->device.Get(), this->deviceContext.Get(), this->cb_vs_vertexshader))
-			return false;
+		camera3D.SetPosition(0.0f, 0.0f, -2.0f);
+		camera3D.SetProjectionValues(90.0f, static_cast<float>(windowWidth) / static_cast<float>(windowHeight), 0.1f, 3000.0f);
 
-		camera.SetPosition(0.0f, 0.0f, -2.0f);
-		camera.SetProjectionValues(90.0f, static_cast<float>(windowWidth) / static_cast<float>(windowHeight), 0.1f, 3000.0f);
+		camera2D.SetProjectionValues(windowWidth, windowHeight, 0, 1.0f);
 	}
 	catch (COMException & exception)
 	{

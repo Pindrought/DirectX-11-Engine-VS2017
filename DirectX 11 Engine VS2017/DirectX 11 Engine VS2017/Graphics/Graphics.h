@@ -4,12 +4,14 @@
 #include <SpriteBatch.h>
 #include <SpriteFont.h>
 #include <WICTextureLoader.h>
-#include "Camera.h"
+#include "Camera2D.h"
+#include "Camera3D.h"
+
 #include "..\\Timer.h"
 #include "ImGUI\\imgui.h"
 #include "ImGUI\\imgui_impl_win32.h"
 #include "ImGUI\\imgui_impl_dx11.h"
-#include "RenderableGameObject.h"
+#include "RenderableGameObject3D.h"
 #include "Light.h"
 
 class Graphics
@@ -17,8 +19,9 @@ class Graphics
 public:
 	bool Initialize(HWND hwnd, int width, int height);
 	void RenderFrame();
-	Camera camera;
-	RenderableGameObject gameObject;
+	Camera3D camera3D;
+	Camera2D camera2D;
+	std::vector<RenderableGameObject3D> gameObjects;
 	Light light;
 private:
 	bool InitializeDirectX(HWND hwnd);
@@ -30,9 +33,11 @@ private:
 	Microsoft::WRL::ComPtr<IDXGISwapChain> swapchain;
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> renderTargetView;
 
-	VertexShader vertexshader;
-	PixelShader pixelshader;
-	PixelShader pixelshader_nolight;
+	std::shared_ptr<VertexShader> vertexshader = std::make_shared<VertexShader>();
+	std::shared_ptr<VertexShader> vertexshader2 = std::make_shared<VertexShader>();
+
+	std::shared_ptr<PixelShader> pixelshader = std::make_shared<PixelShader>();
+	std::shared_ptr<PixelShader> pixelshader_nolight = std::make_shared<PixelShader>();
 	ConstantBuffer<CB_VS_vertexshader> cb_vs_vertexshader;
 	ConstantBuffer<CB_PS_light> cb_ps_light;
 

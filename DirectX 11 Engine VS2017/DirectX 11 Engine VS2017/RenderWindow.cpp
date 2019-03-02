@@ -1,30 +1,28 @@
 #include "WindowContainer.h"
 
-bool RenderWindow::Initialize(WindowContainer * pWindowContainer, HINSTANCE hInstance, std::string window_title, std::string window_class, int width, int height)
+bool RenderWindow::Initialize(WindowContainer * pWindowContainer, HINSTANCE hInstance, std::wstring window_title, std::wstring window_class, int width, int height)
 {
 	this->hInstance = hInstance;
 	this->width = width;
 	this->height = height;
 	this->window_title = window_title;
-	this->window_title_wide = StringHelper::StringToWide(this->window_title);
 	this->window_class = window_class;
-	this->window_class_wide = StringHelper::StringToWide(this->window_class); //wide string representation of class string (used for registering class and creating window)
 
-	this->RegisterWindowClass();
+	RegisterWindowClass();
 
-	int centerScreenX = GetSystemMetrics(SM_CXSCREEN) / 2 - this->width / 2;
-	int centerScreenY = GetSystemMetrics(SM_CYSCREEN) / 2 - this->height / 2;
+	int centerScreenX = GetSystemMetrics(SM_CXSCREEN) / 2 - width / 2;
+	int centerScreenY = GetSystemMetrics(SM_CYSCREEN) / 2 - height / 2;
 
 	RECT wr; //Widow Rectangle
 	wr.left = centerScreenX;
 	wr.top = centerScreenY;
-	wr.right = wr.left + this->width;
-	wr.bottom = wr.top + this->height;
+	wr.right = wr.left + width;
+	wr.bottom = wr.top + height;
 	AdjustWindowRect(&wr, WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU, FALSE);
 
-	this->handle = CreateWindowEx(0, //Extended Windows style - we are using the default. For other options, see: https://msdn.microsoft.com/en-us/library/windows/desktop/ff700543(v=vs.85).aspx
-		this->window_class_wide.c_str(), //Window class name
-		this->window_title_wide.c_str(), //Window Title
+	handle = CreateWindowEx(0, //Extended Windows style - we are using the default. For other options, see: https://msdn.microsoft.com/en-us/library/windows/desktop/ff700543(v=vs.85).aspx
+		window_class.c_str(), //Window class name
+		window_title.c_str(), //Window Title
 		WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU, //Windows style - See: https://msdn.microsoft.com/en-us/library/windows/desktop/ms632600(v=vs.85).aspx
 		wr.left, //Window X Position
 		wr.top, //Window Y Position
@@ -32,19 +30,19 @@ bool RenderWindow::Initialize(WindowContainer * pWindowContainer, HINSTANCE hIns
 		wr.bottom - wr.top, //Window Height
 		NULL, //Handle to parent of this window. Since this is the first window, it has no parent window.
 		NULL, //Handle to menu or child window identifier. Can be set to NULL and use menu in WindowClassEx if a menu is desired to be used.
-		this->hInstance, //Handle to the instance of module to be used with this window
+		hInstance, //Handle to the instance of module to be used with this window
 		pWindowContainer); //Param to create window
 
-	if (this->handle == NULL)
+	if (handle == NULL)
 	{
-		ErrorLogger::Log(GetLastError(), "CreateWindowEX Failed for window: " + this->window_title);
+		ErrorLogger::Log(GetLastError(), L"CreateWindowEX Failed for window: " + window_title);
 		return false;
 	}
 
 	// Bring the window up on the screen and set it as main focus.
-	ShowWindow(this->handle, SW_SHOW);
-	SetForegroundWindow(this->handle);
-	SetFocus(this->handle);
+	ShowWindow(handle, SW_SHOW);
+	SetForegroundWindow(handle);
+	SetFocus(handle);
 
 	return true;
 }
@@ -56,7 +54,7 @@ bool RenderWindow::ProcessMessages()
 	ZeroMemory(&msg, sizeof(MSG)); // Initialize the message structure.
 
 	while (PeekMessage(&msg, //Where to store message (if one exists) See: https://msdn.microsoft.com/en-us/library/windows/desktop/ms644943(v=vs.85).aspx
-		this->handle, //Handle to window we are checking messages for
+		handle, //Handle to window we are checking messages for
 		0,    //Minimum Filter Msg Value - We are not filtering for specific messages, but the min/max could be used to filter only mouse messages for example.
 		0,    //Maximum Filter Msg Value
 		PM_REMOVE))//Remove message after capturing it via PeekMessage. For more argument options, see: https://msdn.microsoft.com/en-us/library/windows/desktop/ms644943(v=vs.85).aspx
@@ -68,10 +66,10 @@ bool RenderWindow::ProcessMessages()
 	// Check if the window was closed
 	if (msg.message == WM_NULL)
 	{
-		if (!IsWindow(this->handle))
+		if (!IsWindow(handle))
 		{
-			this->handle = NULL; //Message processing loop takes care of destroying this window
-			UnregisterClass(this->window_class_wide.c_str(), this->hInstance);
+			handle = NULL; //Message processing loop takes care of destroying this window
+			UnregisterClass(window_class.c_str(), hInstance);
 			return false;
 		}
 	}
@@ -81,14 +79,14 @@ bool RenderWindow::ProcessMessages()
 
 HWND RenderWindow::GetHWND() const
 {
-	return this->handle;
+	return handle;
 }
 
 RenderWindow::~RenderWindow()
 {
-	if (this->handle != NULL)
+	if (handle != NULL)
 	{
-		UnregisterClass(this->window_class_wide.c_str(), this->hInstance);
+		UnregisterClass(window_class.c_str(), hInstance);
 		DestroyWindow(handle);
 	}
 }
@@ -122,7 +120,7 @@ LRESULT CALLBACK HandleMessageSetup(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM 
 		WindowContainer * pWindow = reinterpret_cast<WindowContainer*>(pCreate->lpCreateParams);
 		if (pWindow == nullptr) //Sanity check
 		{
-			ErrorLogger::Log("Critical Error: Pointer to window container is null during WM_NCCREATE.");
+			ErrorLogger::Log(L"Critical Error: Pointer to window container is null during WM_NCCREATE.");
 			exit(-1);
 		}
 		SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pWindow));
@@ -141,13 +139,13 @@ void RenderWindow::RegisterWindowClass()
 	wc.lpfnWndProc = HandleMessageSetup; //Pointer to Window Proc function for handling messages from this window
 	wc.cbClsExtra = 0; //# of extra bytes to allocate following the window-class structure. We are not currently using this.
 	wc.cbWndExtra = 0; //# of extra bytes to allocate following the window instance. We are not currently using this.
-	wc.hInstance = this->hInstance; //Handle to the instance that contains the Window Procedure
+	wc.hInstance = hInstance; //Handle to the instance that contains the Window Procedure
 	wc.hIcon = NULL;   //Handle to the class icon. Must be a handle to an icon resource. We are not currently assigning an icon, so this is null.
 	wc.hIconSm = NULL; //Handle to small icon for this class. We are not currently assigning an icon, so this is null.
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW); //Default Cursor - If we leave this null, we have to explicitly set the cursor's shape each time it enters the window.
 	wc.hbrBackground = NULL; //Handle to the class background brush for the window's background color - we will leave this blank for now and later set this to black. For stock brushes, see: https://msdn.microsoft.com/en-us/library/windows/desktop/dd144925(v=vs.85).aspx
 	wc.lpszMenuName = NULL; //Pointer to a null terminated character string for the menu. We are not using a menu yet, so this will be NULL.
-	wc.lpszClassName = this->window_class_wide.c_str(); //Pointer to null terminated string of our class name for this window.
+	wc.lpszClassName = window_class.c_str(); //Pointer to null terminated string of our class name for this window.
 	wc.cbSize = sizeof(WNDCLASSEX); //Need to fill in the size of our struct for cbSize
 	RegisterClassEx(&wc); // Register the class so that it is usable.
 }

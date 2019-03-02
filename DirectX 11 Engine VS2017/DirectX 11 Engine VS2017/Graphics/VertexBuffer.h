@@ -3,6 +3,7 @@
 #include <d3d11.h>
 #include <wrl/client.h>
 #include <memory>
+#include "PipelineManager.h"
 
 template<class T>
 class VertexBuffer
@@ -15,20 +16,6 @@ private:
 public:
 	VertexBuffer() {}
 
-	VertexBuffer(const VertexBuffer<T>& rhs)
-	{
-		this->buffer = rhs.buffer;
-		this->vertexCount = rhs.vertexCount;
-		this->stride = rhs.stride;
-	}
-
-	VertexBuffer<T> & operator=(const VertexBuffer<T>& a)
-	{
-		this->buffer = a.buffer;
-		this->vertexCount = a.vertexCount;
-		this->stride = a.stride;
-		return *this;
-	}
 
 	ID3D11Buffer* Get()const
 	{
@@ -42,20 +29,20 @@ public:
 
 	UINT VertexCount() const
 	{
-		return this->vertexCount;
+		return vertexCount;
 	}
 
 	const UINT Stride() const
 	{
-		return this->stride;
+		return stride;
 	}
 
 	const UINT * StridePtr() const
 	{
-		return &this->stride;
+		return &stride;
 	}
 
-	HRESULT Initialize(ID3D11Device *device, T * data, UINT vertexCount)
+	HRESULT Initialize(T * data, UINT vertexCount)
 	{
 		if (buffer.Get() != nullptr)
 			buffer.Reset();
@@ -75,7 +62,8 @@ public:
 		ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
 		vertexBufferData.pSysMem = data;
 
-		HRESULT hr = device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, this->buffer.GetAddressOf());
+		ID3D11Device * device = PipelineManager::GetDevicePtr();
+		HRESULT hr = device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, buffer.GetAddressOf());
 		return hr;
 	}
 };

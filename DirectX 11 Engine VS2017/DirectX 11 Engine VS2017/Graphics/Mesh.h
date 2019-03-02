@@ -11,14 +11,14 @@
 class Mesh
 {
 public:
-	Mesh(ID3D11Device * device, ID3D11DeviceContext * deviceContext, std::vector<Vertex> & vertices, std::vector<DWORD> & indices, std::vector<Texture> & textures, const DirectX::XMMATRIX & transformMatrix);
+	Mesh(std::vector<Vertex3D> & vertices, std::vector<DWORD> & indices, std::vector<Texture> & textures, const XMMATRIX & transformMatrix);
 	Mesh(const Mesh & mesh);
 	void Draw();
-	const DirectX::XMMATRIX & GetTransformMatrix();
+	const XMMATRIX & GetTransformMatrix();
 private:
-	VertexBuffer<Vertex> vertexbuffer;
+	VertexBuffer<Vertex3D> vertexbuffer;
 	IndexBuffer indexbuffer;
-	ID3D11DeviceContext * deviceContext;
+	ID3D11DeviceContext * deviceContext = nullptr;
 	std::vector<Texture> textures;
-	DirectX::XMMATRIX transformMatrix;
+	XMMATRIX transformMatrix;
 };

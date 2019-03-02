@@ -1,13 +1,13 @@
 #include "Engine.h"
 
-bool Engine::Initialize(HINSTANCE hInstance, std::string window_title, std::string window_class, int width, int height)
+bool Engine::Initialize(HINSTANCE hInstance, std::wstring window_title, std::wstring window_class, int width, int height)
 {
 	timer.Start();
 
-	if (!this->render_window.Initialize(this, hInstance, window_title, window_class, width, height))
+	if (!render_window.Initialize(this, hInstance, window_title, window_class, width, height))
 		return false;
 
-	if (!gfx.Initialize(this->render_window.GetHWND(), width, height))
+	if (!gfx.Initialize(render_window.GetHWND(), width, height))
 		return false;
 
 	return true;
@@ -15,7 +15,7 @@ bool Engine::Initialize(HINSTANCE hInstance, std::string window_title, std::stri
 
 bool Engine::ProcessMessages()
 {
-	return this->render_window.ProcessMessages();
+	return render_window.ProcessMessages();
 }
 
 void Engine::Update()
@@ -41,12 +41,15 @@ void Engine::Update()
 		{
 			if (me.GetType() == MouseEvent::EventType::RAW_MOVE)
 			{
-				this->gfx.camera.AdjustRotation((float)me.GetPosY() * 0.01f, (float)me.GetPosX() * 0.01f, 0);
+				gfx.camera3D.AdjustRotation((float)me.GetPosY() * 0.01f, (float)me.GetPosX() * 0.01f, 0);
 			}
 		}
 	}
 
-	this->gfx.gameObject.AdjustRotation(0.0f, 0.001f*dt, 0.0f);
+	for (auto & object : gfx.gameObjects)
+	{
+		object.AdjustRotation(0.0f, 0.001f*dt, 0.0f);
+	}
 
 	float cameraSpeed = 0.006f;
 
@@ -57,41 +60,41 @@ void Engine::Update()
 
 	if (keyboard.KeyIsPressed('W'))
 	{
-		this->gfx.camera.AdjustPosition(this->gfx.camera.GetForwardVector() * cameraSpeed * dt);
+		gfx.camera3D.AdjustPosition(gfx.camera3D.GetForwardVector() * cameraSpeed * dt);
 	}
 	if (keyboard.KeyIsPressed('S'))
 	{
-		this->gfx.camera.AdjustPosition(this->gfx.camera.GetBackwardVector() * cameraSpeed * dt);
+		gfx.camera3D.AdjustPosition(gfx.camera3D.GetBackwardVector() * cameraSpeed * dt);
 	}
 	if (keyboard.KeyIsPressed('A'))
 	{
-		this->gfx.camera.AdjustPosition(this->gfx.camera.GetLeftVector() * cameraSpeed * dt);
+		gfx.camera3D.AdjustPosition(gfx.camera3D.GetLeftVector() * cameraSpeed * dt);
 	}
 	if (keyboard.KeyIsPressed('D'))
 	{
-		this->gfx.camera.AdjustPosition(this->gfx.camera.GetRightVector() * cameraSpeed * dt);
+		gfx.camera3D.AdjustPosition(gfx.camera3D.GetRightVector() * cameraSpeed * dt);
 	}
 	if (keyboard.KeyIsPressed(VK_SPACE))
 	{
-		this->gfx.camera.AdjustPosition(0.0f, cameraSpeed * dt, 0.0f);
+		gfx.camera3D.AdjustPosition(0.0f, cameraSpeed * dt, 0.0f);
 	}
 	if (keyboard.KeyIsPressed('Z'))
 	{
-		this->gfx.camera.AdjustPosition(0.0f, -cameraSpeed * dt, 0.0f);
+		gfx.camera3D.AdjustPosition(0.0f, -cameraSpeed * dt, 0.0f);
 	}
 
 	if (keyboard.KeyIsPressed('C'))
 	{
-		XMVECTOR lightPosition = this->gfx.camera.GetPositionVector();
-		lightPosition += this->gfx.camera.GetForwardVector();
-		this->gfx.light.SetPosition(lightPosition);
-		this->gfx.light.SetRotation(this->gfx.camera.GetRotationFloat3());
+		XMVECTOR lightPosition = gfx.camera3D.GetPositionVector();
+		lightPosition += gfx.camera3D.GetForwardVector();
+		gfx.light.SetPosition(lightPosition);
+		gfx.light.SetRotation(gfx.camera3D.GetRotationFloat3());
 	}
 
 }
 
 void Engine::RenderFrame()
 {
-	this->gfx.RenderFrame();
+	gfx.RenderFrame();
 }
 

@@ -14,7 +14,7 @@ WindowContainer::WindowContainer()
 
 		if (RegisterRawInputDevices(&rid, 1, sizeof(rid)) == FALSE)
 		{
-			ErrorLogger::Log(GetLastError(), "Failed to register raw input devices.");
+			ErrorLogger::Log(GetLastError(), L"Failed to register raw input devices.");
 			exit(-1);
 		}
 

@@ -1,9 +1,8 @@
 #ifndef ConstantBuffer_h__
 #define ConstantBuffer_h__
-#include <d3d11.h>
 #include "ConstantBufferTypes.h"
-#include <wrl/client.h>
 #include "..\\ErrorLogger.h"
+#include "PipelineManager.h"
 
 template<class T>
 class ConstantBuffer
@@ -13,7 +12,7 @@ private:
 
 private:
 
-	Microsoft::WRL::ComPtr<ID3D11Buffer> buffer;
+	ComPtr<ID3D11Buffer> buffer = nullptr;
 	ID3D11DeviceContext * deviceContext = nullptr;
 
 public:
@@ -31,12 +30,12 @@ public:
 		return buffer.GetAddressOf();
 	}
 
-	HRESULT Initialize(ID3D11Device *device, ID3D11DeviceContext * deviceContext)
+	HRESULT Initialize()
 	{
 		if (buffer.Get() != nullptr)
 			buffer.Reset();
 
-		this->deviceContext = deviceContext;
+		deviceContext = PipelineManager::GetDeviceContextPtr();
 
 		D3D11_BUFFER_DESC desc;
 		desc.Usage = D3D11_USAGE_DYNAMIC;
@@ -46,6 +45,7 @@ public:
 		desc.ByteWidth = static_cast<UINT>(sizeof(T) + (16 - (sizeof(T) % 16)));
 		desc.StructureByteStride = 0;
 
+		ID3D11Device * device = PipelineManager::GetDevicePtr();
 		HRESULT hr = device->CreateBuffer(&desc, 0, buffer.GetAddressOf());
 		return hr;
 	}
@@ -53,14 +53,14 @@ public:
 	bool ApplyChanges()
 	{
 		D3D11_MAPPED_SUBRESOURCE mappedResource;
-		HRESULT hr = this->deviceContext->Map(buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+		HRESULT hr = deviceContext->Map(buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 		if (FAILED(hr))
 		{
-			ErrorLogger::Log(hr, "Failed to map constant buffer.");
+			ErrorLogger::Log(hr, L"Failed to map constant buffer.");
 			return false;
 		}
 		CopyMemory(mappedResource.pData, &data, sizeof(T));
-		this->deviceContext->Unmap(buffer.Get(), 0);
+		deviceContext->Unmap(buffer.Get(), 0);
 		return true;
 	}
 };

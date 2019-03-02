@@ -16,25 +16,25 @@ MouseEvent::MouseEvent(EventType type, int x, int y)
 
 bool MouseEvent::IsValid() const
 {
-	return this->type != EventType::Invalid;
+	return type != EventType::Invalid;
 }
 
 MouseEvent::EventType MouseEvent::GetType() const
 {
-	return this->type;
+	return type;
 }
 
 MousePoint MouseEvent::GetPos() const
 {
-	return{ this->x,this->y };
+	return{ x,y };
 }
 
 int MouseEvent::GetPosX() const
 {
-	return this->x;
+	return x;
 }
 
 int MouseEvent::GetPosY() const
 {
-	return this->y;
+	return y;
 }

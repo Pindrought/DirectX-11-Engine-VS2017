@@ -1,16 +1,17 @@
 #include "Model.h"
+#include "ResourceManager.h"
 
-bool Model::Initialize(const std::string & filePath, ID3D11Device * device, ID3D11DeviceContext * deviceContext, ConstantBuffer<CB_VS_vertexshader>& cb_vs_vertexshader)
+bool Model::Initialize(const std::string & filePath, ConstantBuffer<CB_VS_vertexshader>& cb_vs_vertexshader)
 {
-	this->device = device;
-	this->deviceContext = deviceContext;
+	device = PipelineManager::GetDevicePtr();
+	deviceContext = PipelineManager::GetDeviceContextPtr();
 	this->cb_vs_vertexshader = &cb_vs_vertexshader;
-	this->type = ResourceType::Model;
-	this->name = filePath;
+	type = ResourceType::RT_Model;
+	name = StringHelper::GetFileNameOnlyFromPath(StringHelper::StringToWide(filePath));
 
 	try
 	{
-		if (!this->LoadModel(filePath))
+		if (!LoadModel(filePath))
 			return false;
 	}
 	catch (COMException & exception)
@@ -24,21 +25,21 @@ bool Model::Initialize(const std::string & filePath, ID3D11Device * device, ID3D
 
 void Model::Draw(const XMMATRIX & worldMatrix, const XMMATRIX & viewProjectionMatrix)
 {
-	this->deviceContext->VSSetConstantBuffers(0, 1, this->cb_vs_vertexshader->GetAddressOf());
+	deviceContext->VSSetConstantBuffers(0, 1, cb_vs_vertexshader->GetAddressOf());
 
 	for (int i = 0; i < meshes.size(); i++)
 	{
 		//Update Constant buffer with WVP Matrix
-		this->cb_vs_vertexshader->data.wvpMatrix = meshes[i].GetTransformMatrix() * worldMatrix * viewProjectionMatrix; //Calculate World-View-Projection Matrix
-		this->cb_vs_vertexshader->data.worldMatrix = meshes[i].GetTransformMatrix() * worldMatrix; //Calculate World
-		this->cb_vs_vertexshader->ApplyChanges();
+		cb_vs_vertexshader->data.wvpMatrix = meshes[i].GetTransformMatrix() * worldMatrix * viewProjectionMatrix; //Calculate World-View-Projection Matrix
+		cb_vs_vertexshader->data.worldMatrix = meshes[i].GetTransformMatrix() * worldMatrix; //Calculate World
+		cb_vs_vertexshader->ApplyChanges();
 		meshes[i].Draw();
 	}
 }
 
 bool Model::LoadModel(const std::string & filePath)
 {
-	this->directory = StringHelper::GetDirectoryFromPath(filePath);
+	directory = StringHelper::GetDirectoryFromPath(filePath);
 
 	Assimp::Importer importer;
 
@@ -49,7 +50,7 @@ bool Model::LoadModel(const std::string & filePath)
 	if (pScene == nullptr)
 		return false;
 
-	this->ProcessNode(pScene->mRootNode, pScene, DirectX::XMMatrixIdentity());
+	ProcessNode(pScene->mRootNode, pScene, DirectX::XMMatrixIdentity());
 	return true;
 }
 
@@ -60,25 +61,25 @@ void Model::ProcessNode(aiNode * node, const aiScene * scene, const XMMATRIX & p
 	for (UINT i = 0; i < node->mNumMeshes; i++)
 	{
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-		meshes.push_back(this->ProcessMesh(mesh, scene, nodeTransformMatrix));
+		meshes.push_back(ProcessMesh(mesh, scene, nodeTransformMatrix));
 	}
 
 	for (UINT i = 0; i < node->mNumChildren; i++)
 	{
-		this->ProcessNode(node->mChildren[i], scene, nodeTransformMatrix);
+		ProcessNode(node->mChildren[i], scene, nodeTransformMatrix);
 	}
 }
 
 Mesh Model::ProcessMesh(aiMesh * mesh, const aiScene * scene, const XMMATRIX & transformMatrix)
 {
 	// Data to fill
-	std::vector<Vertex> vertices;
+	std::vector<Vertex3D> vertices;
 	std::vector<DWORD> indices;
 
 	//Get vertices
 	for (UINT i = 0; i < mesh->mNumVertices; i++)
 	{
-		Vertex vertex;
+		Vertex3D vertex;
 
 		vertex.pos.x = mesh->mVertices[i].x;
 		vertex.pos.y = mesh->mVertices[i].y;
@@ -111,7 +112,7 @@ Mesh Model::ProcessMesh(aiMesh * mesh, const aiScene * scene, const XMMATRIX & t
 	std::vector<Texture> diffuseTextures = LoadMaterialTextures(material, aiTextureType::aiTextureType_DIFFUSE, scene);
 	textures.insert(textures.end(), diffuseTextures.begin(), diffuseTextures.end());
 
-	return Mesh(this->device, this->deviceContext, vertices, indices, textures, transformMatrix);
+	return Mesh(vertices, indices, textures, transformMatrix);
 }
 
 TextureStorageType Model::DetermineTextureStorageType(const aiScene * pScene, aiMaterial * pMat, unsigned int index, aiTextureType textureType)
@@ -149,7 +150,7 @@ TextureStorageType Model::DetermineTextureStorageType(const aiScene * pScene, ai
 		}
 	}
 	//Lastly check if texture is a filepath by checking for period before extension name
-	if (texturePath.find('.') != std::string::npos)
+	if (texturePath.find('.') != std::wstring::npos)
 	{
 		return TextureStorageType::Disk;
 	}
@@ -173,10 +174,10 @@ std::vector<Texture> Model::LoadMaterialTextures(aiMaterial * pMaterial, aiTextu
 			pMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, aiColor);
 			if (aiColor.IsBlack()) //If color = black, just use grey
 			{
-				materialTextures.push_back(Texture(this->device, Colors::UnloadedTextureColor, textureType));
+				materialTextures.push_back(Texture(Colors::UnloadedTextureColor, textureType));
 				return materialTextures;
 			}
-			materialTextures.push_back(Texture(this->device, Color(aiColor.r * 255, aiColor.g * 255, aiColor.b * 255), textureType));
+			materialTextures.push_back(Texture(Color(aiColor.r * 255, aiColor.g * 255, aiColor.b * 255), textureType));
 			return materialTextures;
 		}
 	}
@@ -192,8 +193,7 @@ std::vector<Texture> Model::LoadMaterialTextures(aiMaterial * pMaterial, aiTextu
 			case TextureStorageType::EmbeddedIndexCompressed:
 			{
 				int index = GetTextureIndex(&path);
-				Texture embeddedIndexedTexture(	this->device,
-												reinterpret_cast<uint8_t*>(pScene->mTextures[index]->pcData),
+				Texture embeddedIndexedTexture(	reinterpret_cast<uint8_t*>(pScene->mTextures[index]->pcData),
 												pScene->mTextures[index]->mWidth,
 												textureType);
 				materialTextures.push_back(embeddedIndexedTexture);
@@ -202,8 +202,7 @@ std::vector<Texture> Model::LoadMaterialTextures(aiMaterial * pMaterial, aiTextu
 			case TextureStorageType::EmbeddedCompressed:
 			{
 				const aiTexture * pTexture = pScene->GetEmbeddedTexture(path.C_Str());
-				Texture embeddedTexture(this->device,
-										reinterpret_cast<uint8_t*>(pTexture->pcData),
+				Texture embeddedTexture(reinterpret_cast<uint8_t*>(pTexture->pcData),
 										pTexture->mWidth,
 										textureType);
 				materialTextures.push_back(embeddedTexture);
@@ -211,8 +210,8 @@ std::vector<Texture> Model::LoadMaterialTextures(aiMaterial * pMaterial, aiTextu
 			}
 			case TextureStorageType::Disk:
 			{
-				std::string filename = this->directory + '\\' + path.C_Str();
-				Texture diskTexture(this->device, filename, textureType);
+				std::string filename = directory + '\\' + path.C_Str();
+				Texture diskTexture(StringHelper::StringToWide(filename), textureType);
 				materialTextures.push_back(diskTexture);
 				break;
 			}
@@ -222,7 +221,7 @@ std::vector<Texture> Model::LoadMaterialTextures(aiMaterial * pMaterial, aiTextu
 
 	if (materialTextures.size() == 0)
 	{
-		materialTextures.push_back(Texture(this->device, Colors::UnhandledTextureColor, aiTextureType::aiTextureType_DIFFUSE));
+		materialTextures.push_back(Texture(Colors::UnhandledTextureColor, aiTextureType::aiTextureType_DIFFUSE));
 	}
 	return materialTextures;
 

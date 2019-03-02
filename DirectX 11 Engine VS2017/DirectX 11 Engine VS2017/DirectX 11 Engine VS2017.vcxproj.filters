@@ -75,9 +75,6 @@
     <ClCompile Include="Graphics\Shaders.cpp">
       <Filter>Source Files\Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="Graphics\Camera.cpp">
-      <Filter>Source Files\Graphics</Filter>
-    </ClCompile>
     <ClCompile Include="Timer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -105,9 +102,6 @@
     <ClCompile Include="Graphics\Mesh.cpp">
       <Filter>Source Files\Graphics</Filter>
     </ClCompile>
-    <ClCompile Include="Graphics\GameObject.cpp">
-      <Filter>Source Files\Graphics</Filter>
-    </ClCompile>
     <ClCompile Include="Graphics\Color.cpp">
       <Filter>Source Files\Graphics</Filter>
     </ClCompile>
@@ -117,9 +111,6 @@
     <ClCompile Include="StringHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Graphics\RenderableGameObject.cpp">
-      <Filter>Source Files\Graphics</Filter>
-    </ClCompile>
     <ClCompile Include="Graphics\Light.cpp">
       <Filter>Source Files\Graphics</Filter>
     </ClCompile>
@@ -127,7 +118,28 @@
       <Filter>Source Files\Graphics</Filter>
     </ClCompile>
     <ClCompile Include="Graphics\ResourceManager.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\PipelineManager.cpp">
+      <Filter>Source Files\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\GameObject3D.cpp">
+      <Filter>Source Files\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\RenderableGameObject3D.cpp">
+      <Filter>Source Files\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\GameObject.cpp">
+      <Filter>Source Files\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\GameObject2D.cpp">
+      <Filter>Source Files\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\Camera3D.cpp">
+      <Filter>Source Files\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\Camera2D.cpp">
+      <Filter>Source Files\Graphics</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -179,9 +191,6 @@
     <ClInclude Include="Graphics\ConstantBuffer.h">
       <Filter>Header Files\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="Graphics\Camera.h">
-      <Filter>Header Files\Graphics</Filter>
-    </ClInclude>
     <ClInclude Include="Timer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -218,9 +227,6 @@
     <ClInclude Include="Graphics\Mesh.h">
       <Filter>Header Files\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="Graphics\GameObject.h">
-      <Filter>Header Files\Graphics</Filter>
-    </ClInclude>
     <ClInclude Include="Graphics\Color.h">
       <Filter>Header Files\Graphics</Filter>
     </ClInclude>
@@ -230,9 +236,6 @@
     <ClInclude Include="StringHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Graphics\RenderableGameObject.h">
-      <Filter>Header Files\Graphics</Filter>
-    </ClInclude>
     <ClInclude Include="Graphics\Light.h">
       <Filter>Header Files\Graphics</Filter>
     </ClInclude>
@@ -240,6 +243,30 @@
       <Filter>Header Files\Graphics</Filter>
     </ClInclude>
     <ClInclude Include="Graphics\ResourceManager.h">
+      <Filter>Header Files\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\PipelineManager.h">
+      <Filter>Header Files\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\GameObject3D.h">
+      <Filter>Header Files\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\RenderableGameObject3D.h">
+      <Filter>Header Files\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\GameObject2D.h">
+      <Filter>Header Files\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\GameObject.h">
+      <Filter>Header Files\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\Camera3D.h">
+      <Filter>Header Files\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\Camera2D.h">
+      <Filter>Header Files\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\Sprite.h">
       <Filter>Header Files\Graphics</Filter>
     </ClInclude>
   </ItemGroup>
@@ -253,8 +280,22 @@
     <FxCompile Include="pixelshader_nolight.hlsl">
       <Filter>Resource Files</Filter>
     </FxCompile>
-    <FxCompile Include="pixelshader_flatcolor.hlsl">
+    <FxCompile Include="Graphics\vs_depth.hlsl">
       <Filter>Resource Files</Filter>
     </FxCompile>
+    <FxCompile Include="vertexshader2.hlsl">
+      <Filter>Resource Files</Filter>
+    </FxCompile>
+    <FxCompile Include="pixelshader_2d.hlsl">
+      <Filter>Resource Files</Filter>
+    </FxCompile>
+    <FxCompile Include="vertexshader_2d.hlsl">
+      <Filter>Resource Files</Filter>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Graphics\PipelineManager.inl">
+      <Filter>Header Files\Graphics</Filter>
+    </None>
   </ItemGroup>
 </Project>

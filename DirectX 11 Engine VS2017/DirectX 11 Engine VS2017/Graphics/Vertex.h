@@ -1,13 +1,15 @@
 #pragma once
 #include <DirectXMath.h>
 
-struct Vertex
+using namespace DirectX;
+
+struct Vertex3D
 {
-	Vertex() {}
-	Vertex(float x, float y, float z, float u, float v, float nx, float ny, float nz)
+	Vertex3D() {}
+	Vertex3D(float x, float y, float z, float u, float v, float nx, float ny, float nz)
 		: pos(x, y, z), texCoord(u, v), normal(nx, ny, nz) {}
 
-	DirectX::XMFLOAT3 pos;
-	DirectX::XMFLOAT2 texCoord;
-	DirectX::XMFLOAT3 normal;
+	XMFLOAT3 pos;
+	XMFLOAT2 texCoord;
+	XMFLOAT3 normal;
 };

@@ -3091,9 +3091,9 @@ static bool InputTextFilterCharacter(unsigned int* p_char, ImGuiInputTextFlags f
 // Edit a string of text
 // - buf_size account for the zero-terminator, so a buf_size of 6 can hold "Hello" but not "Hello!".
 //   This is so we can easily call InputText() on static arrays using ARRAYSIZE() and to match 
-//   Note that in std::string world, capacity() would omit 1 byte used by the zero-terminator.
+//   Note that in std::wstring world, capacity() would omit 1 byte used by the zero-terminator.
 // - When active, hold on a privately held copy of the text (and apply back to 'buf'). So changing 'buf' while the InputText is active has no effect.
-// - If you want to use ImGui::InputText() with std::string, see misc/stl/imgui_stl.h
+// - If you want to use ImGui::InputText() with std::wstring, see misc/stl/imgui_stl.h
 // (FIXME: Rather messy function partly because we are doing UTF8 > u16 > UTF8 conversions on the go to more easily handle stb_textedit calls. Ideally we should stay in UTF-8 all the time. See https://github.com/nothings/stb/issues/188)
 bool ImGui::InputTextEx(const char* label, char* buf, int buf_size, const ImVec2& size_arg, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void* callback_user_data)
 {

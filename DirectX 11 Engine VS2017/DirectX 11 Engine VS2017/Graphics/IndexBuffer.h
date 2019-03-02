@@ -27,10 +27,10 @@ public:
 
 	UINT IndexCount() const
 	{
-		return this->indexCount;
+		return indexCount;
 	}
 
-	HRESULT Initialize(ID3D11Device *device, DWORD * data, UINT indexCount)
+	HRESULT Initialize(DWORD * data, UINT indexCount)
 	{
 		if (buffer.Get() != nullptr)
 			buffer.Reset();
@@ -47,6 +47,8 @@ public:
 
 		D3D11_SUBRESOURCE_DATA indexBufferData;
 		indexBufferData.pSysMem = data;
+
+		ID3D11Device * device = PipelineManager::GetDevicePtr();
 		HRESULT hr = device->CreateBuffer(&indexBufferDesc, &indexBufferData, buffer.GetAddressOf());
 		return hr;
 	}
