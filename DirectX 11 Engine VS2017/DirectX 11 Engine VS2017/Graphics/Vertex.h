@@ -3,6 +3,16 @@
 
 using namespace DirectX;
 
+struct Vertex2D
+{
+	Vertex2D() {}
+	Vertex2D(float x, float y, float z, float u, float v)
+		: pos(x, y, z), texCoord(u, v) {}
+
+	XMFLOAT3 pos;
+	XMFLOAT2 texCoord;
+};
+
 struct Vertex3D
 {
 	Vertex3D() {}

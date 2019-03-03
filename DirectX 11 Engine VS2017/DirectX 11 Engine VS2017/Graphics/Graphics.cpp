@@ -44,18 +44,26 @@ void Graphics::RenderFrame()
 
 	deviceContext->PSSetSamplers(0, 1, samplerState.GetAddressOf());
 	PipelineManager::NewFrame();
-	PipelineManager::SetInputLayout(vertexshader->GetInputLayout());
 	PipelineManager::SetDepthStencilState(depthStencilState.Get());
 	PipelineManager::SetBlendState(nullptr);
 	PipelineManager::SetRasterizerState(rasterizerState.Get());
 	PipelineManager::SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	
+
+	//draw 2d stuff
+	PipelineManager::SetDepthStencilState(depthStencilState_maskpredraw.Get());
+
+	PipelineManager::SetInputLayout(vertexshader_2d->GetInputLayout());
+	PipelineManager::SetPixelShader(pixelshader_2d_mask->GetShader());
+	PipelineManager::SetVertexShader(vertexshader_2d->GetShader());
+	sprite.Draw(camera2D.GetOrthoMatrix());
+
+	//draw 3d stuff
+	PipelineManager::SetDepthStencilState(depthStencilState_maskpostdraw.Get(), 0);
+
+	PipelineManager::SetInputLayout(vertexshader->GetInputLayout());
 	PipelineManager::SetPixelShader(pixelshader->GetShader());
 	PipelineManager::SetVertexShader(vertexshader->GetShader());
-
-	PixelShader * shader = nullptr;
-	PipelineManager::GetResource(L"ps_3d", shader);
-	PipelineManager::SetPixelShader(shader->GetShader());
-
 	{
 		for (auto & object : gameObjects)
 		{
@@ -67,42 +75,44 @@ void Graphics::RenderFrame()
 		light.Draw(camera3D.GetViewMatrix() * camera3D.GetProjectionMatrix());
 	}
 
-	////Draw Text
-	//static int fpsCounter = 0;
-	//static std::wstring fpsString = L"FPS: 0";
-	//fpsCounter += 1;
-	//if (fpsTimer.GetMilisecondsElapsed() > 1000.0)
-	//{
-	//	fpsString = L"FPS: " + std::to_wstring(fpsCounter);
-	//	fpsCounter = 0;
-	//	fpsTimer.Restart();
-	//}
-	//spriteBatch->Begin();
-	//spriteFont->DrawString(spriteBatch.get(), fpsString.c_str(), DirectX::XMFLOAT2(0, 0), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f,0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
-	//spriteBatch->End();
+	
 
-	//static int counter = 0;
-	//// Start the Dear ImGui frame
-	//ImGui_ImplDX11_NewFrame();
-	//ImGui_ImplWin32_NewFrame();
-	//ImGui::NewFrame();
-	////Create ImGui Test Window
-	//ImGui::Begin("Light Controls");
-	//ImGui::DragFloat3("Ambient Light Color", &cb_ps_light.data.ambientLightColor.x, 0.01f, 0.0f, 1.0f);
-	//ImGui::DragFloat("Ambient Light Strength", &cb_ps_light.data.ambientLightStrength, 0.01f, 0.0f, 1.0f);
-	//ImGui::NewLine();
-	//ImGui::DragFloat3("Dynamic Light Color", &light.lightColor.x, 0.01f, 0.0f, 10.0f);
-	//ImGui::DragFloat("Dynamic Light Strength", &light.lightStrength, 0.01f, 0.0f, 10.0f);
-	//ImGui::DragFloat("Dynamic Light Attenuation A", &light.attenuation_a, 0.01f, 0.1f, 10.0f);
-	//ImGui::DragFloat("Dynamic Light Attenuation B", &light.attenuation_b, 0.01f, 0.0f, 10.0f);
-	//ImGui::DragFloat("Dynamic Light Attenuation C", &light.attenuation_c, 0.01f, 0.0f, 10.0f);
-	//ImGui::End();
-	////Assemble Together Draw Data
-	//ImGui::Render();
-	////Render Draw Data
-	//ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+	//Draw Text
+	static int fpsCounter = 0;
+	static std::wstring fpsString = L"FPS: 0";
+	fpsCounter += 1;
+	if (fpsTimer.GetMilisecondsElapsed() > 1000.0)
+	{
+		fpsString = L"FPS: " + std::to_wstring(fpsCounter);
+		fpsCounter = 0;
+		fpsTimer.Restart();
+	}
+	spriteBatch->Begin();
+	spriteFont->DrawString(spriteBatch.get(), fpsString.c_str(), DirectX::XMFLOAT2(0, 0), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f,0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+	spriteBatch->End();
 
-	swapchain->Present(0, NULL);
+	static int counter = 0;
+	// Start the Dear ImGui frame
+	ImGui_ImplDX11_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+	//Create ImGui Test Window
+	ImGui::Begin("Light Controls");
+	ImGui::DragFloat3("Ambient Light Color", &cb_ps_light.data.ambientLightColor.x, 0.01f, 0.0f, 1.0f);
+	ImGui::DragFloat("Ambient Light Strength", &cb_ps_light.data.ambientLightStrength, 0.01f, 0.0f, 1.0f);
+	ImGui::NewLine();
+	ImGui::DragFloat3("Dynamic Light Color", &light.lightColor.x, 0.01f, 0.0f, 10.0f);
+	ImGui::DragFloat("Dynamic Light Strength", &light.lightStrength, 0.01f, 0.0f, 10.0f);
+	ImGui::DragFloat("Dynamic Light Attenuation A", &light.attenuation_a, 0.01f, 0.1f, 10.0f);
+	ImGui::DragFloat("Dynamic Light Attenuation B", &light.attenuation_b, 0.01f, 0.0f, 10.0f);
+	ImGui::DragFloat("Dynamic Light Attenuation C", &light.attenuation_c, 0.01f, 0.0f, 10.0f);
+	ImGui::End();
+	//Assemble Together Draw Data
+	ImGui::Render();
+	//Render Draw Data
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+	swapchain->Present(1, NULL);
 }
 
 bool Graphics::InitializeDirectX(HWND hwnd)
@@ -184,12 +194,45 @@ bool Graphics::InitializeDirectX(HWND hwnd)
 		hr = device->CreateDepthStencilState(&depthstencildesc, depthStencilState.GetAddressOf());
 		COM_ERROR_IF_FAILED(hr, L"Failed to create depth stencil state.");
 
+		//Create depth stencil state
+		CD3D11_DEPTH_STENCIL_DESC depthstencildesc_maskpredraw(D3D11_DEFAULT);
+		depthstencildesc_maskpredraw.DepthEnable = FALSE;
+		depthstencildesc_maskpredraw.StencilEnable = TRUE;
+		//never do backface shit
+		depthstencildesc_maskpredraw.BackFace.StencilFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_NEVER;
+		//always do front face
+		depthstencildesc_maskpredraw.FrontFace.StencilFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_ALWAYS;
+		depthstencildesc_maskpredraw.FrontFace.StencilPassOp = D3D11_STENCIL_OP::D3D11_STENCIL_OP_INCR_SAT;
+		depthstencildesc_maskpredraw.StencilWriteMask = 0xFF;
+		depthstencildesc_maskpredraw.StencilReadMask = 0xFF;
+
+		hr = device->CreateDepthStencilState(&depthstencildesc_maskpredraw, depthStencilState_maskpredraw.GetAddressOf());
+		COM_ERROR_IF_FAILED(hr, L"Failed to create depth stencil state for mask predraw.");
+
+		//Create depth stencil state
+		CD3D11_DEPTH_STENCIL_DESC depthstencildesc_maskpostdraw(D3D11_DEFAULT);
+		depthstencildesc.DepthFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_LESS_EQUAL;
+		depthstencildesc_maskpostdraw.StencilEnable = TRUE;
+		//never do backface shit
+		depthstencildesc_maskpostdraw.BackFace.StencilFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_NEVER;
+		//always do front face
+		depthstencildesc_maskpostdraw.FrontFace.StencilFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_LESS;
+		depthstencildesc_maskpostdraw.FrontFace.StencilPassOp = D3D11_STENCIL_OP::D3D11_STENCIL_OP_KEEP;
+		depthstencildesc_maskpostdraw.FrontFace.StencilFailOp = D3D11_STENCIL_OP::D3D11_STENCIL_OP_KEEP;
+		depthstencildesc_maskpostdraw.StencilWriteMask = 0xFF;
+		depthstencildesc_maskpostdraw.StencilReadMask = 0xFF;
+
+		hr = device->CreateDepthStencilState(&depthstencildesc_maskpostdraw, depthStencilState_maskpostdraw.GetAddressOf());
+		COM_ERROR_IF_FAILED(hr, L"Failed to create depth stencil state for mask POSTDRAW.");
+
 		//Create & set the Viewport
 		CD3D11_VIEWPORT viewport(0.0f, 0.0f, static_cast<float>(windowWidth), static_cast<float>(windowHeight));;
 		deviceContext->RSSetViewports(1, &viewport);
 
 		//Create Rasterizer State
 		CD3D11_RASTERIZER_DESC rasterizerDesc(D3D11_DEFAULT);
+		rasterizerDesc.CullMode = D3D11_CULL_NONE;
+
 		hr = device->CreateRasterizerState(&rasterizerDesc, rasterizerState.GetAddressOf());
 		COM_ERROR_IF_FAILED(hr, L"Failed to create rasterizer state.");
 
@@ -257,22 +300,32 @@ bool Graphics::InitializeShaders()
 #endif
 	}
 
-	D3D11_INPUT_ELEMENT_DESC layout[] =
+	D3D11_INPUT_ELEMENT_DESC layout_3d[] =
 	{
 		{"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
 		{"TEXCOORD", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
 		{"NORMAL", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
 	};
 
-	UINT numElements = ARRAYSIZE(layout);
+	D3D11_INPUT_ELEMENT_DESC layout_2d[] =
+	{
+		{"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
+		{"TEXCOORD", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
+	};
+
+	UINT numElements = ARRAYSIZE(layout_3d);
 	
-	if (!vertexshader->Initialize(shaderfolder + L"vertexshader.cso", layout, numElements))
+	if (!vertexshader->Initialize(shaderfolder + L"vertexshader.cso", layout_3d, numElements))
 		return false;
 	
 	PipelineManager::RegisterResource(L"vs_3d", vertexshader);
 
-	if (!vertexshader2->Initialize(shaderfolder + L"vertexshader2.cso", layout, numElements))
+	numElements = ARRAYSIZE(layout_2d);
+	if (!vertexshader_2d->Initialize(shaderfolder + L"vertexshader_2d.cso", layout_2d, numElements))
 		return false;
+
+	PipelineManager::RegisterResource(L"vs_2d", vertexshader);
+
 
 	if (!pixelshader->Initialize(shaderfolder + L"pixelshader.cso"))
 		return false;
@@ -284,6 +337,16 @@ bool Graphics::InitializeShaders()
 
 	PipelineManager::RegisterResource(L"ps_3d_nolight", pixelshader_nolight);
 	
+	if (!pixelshader_2d->Initialize(shaderfolder + L"pixelshader_2d.cso"))
+		return false;
+
+	PipelineManager::RegisterResource(L"ps_2d", pixelshader_2d);
+
+	if (!pixelshader_2d_mask->Initialize(shaderfolder + L"pixelshader_2d_mask.cso"))
+		return false;
+
+	PipelineManager::RegisterResource(L"ps_2d_mask", pixelshader_2d_mask);
+
 	return true;
 }
 
@@ -294,6 +357,9 @@ bool Graphics::InitializeScene()
 		//Initialize Constant Buffer(s)
 		HRESULT hr = cb_vs_vertexshader.Initialize();
 		COM_ERROR_IF_FAILED(hr, L"Failed to initialize constant buffer.");
+
+		hr = cb_vs_vertexshader_2d.Initialize();
+		COM_ERROR_IF_FAILED(hr, L"Failed to initialize 2d constant buffer.");
 
 		hr = cb_ps_light.Initialize();
 		COM_ERROR_IF_FAILED(hr, L"Failed to initialize constant buffer.");
@@ -307,7 +373,7 @@ bool Graphics::InitializeScene()
 		{
 			/*if (!object.Initialize("Data\\Objects\\Nanosuit\\Nanosuit.obj", cb_vs_vertexshader))
 				return false;*/
-			if (!object.Initialize("Data\\Objects\\Samples/person_embeddedindexed.blend", cb_vs_vertexshader))
+			if (!object.Initialize("Data/Objects/nanosuit/nanosuit.obj", cb_vs_vertexshader))
 				return false;
 			object.SetPosition(xPos, 0.0f, 0.0f);
 			xPos += 5.0f;
@@ -320,6 +386,12 @@ bool Graphics::InitializeScene()
 		camera3D.SetProjectionValues(90.0f, static_cast<float>(windowWidth) / static_cast<float>(windowHeight), 0.1f, 3000.0f);
 
 		camera2D.SetProjectionValues(windowWidth, windowHeight, 0, 1.0f);
+		camera2D.SetPosition(0.0f, 0.0f, 0.0f);
+
+		if (!sprite.Initialize(700, 700, L"Data/Textures/star.png", cb_vs_vertexshader_2d))
+			return false;
+
+		sprite.SetPosition(windowWidth/2.0f - sprite.GetWidth()/2.0f, windowHeight/2.0f - sprite.GetHeight()/2.0f, 0.0f);
 	}
 	catch (COMException & exception)
 	{

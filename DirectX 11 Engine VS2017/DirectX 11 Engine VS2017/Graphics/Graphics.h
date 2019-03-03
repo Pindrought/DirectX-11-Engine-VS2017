@@ -13,6 +13,7 @@
 #include "ImGUI\\imgui_impl_dx11.h"
 #include "RenderableGameObject3D.h"
 #include "Light.h"
+#include "Sprite.h"
 
 class Graphics
 {
@@ -23,6 +24,7 @@ public:
 	Camera2D camera2D;
 	std::vector<RenderableGameObject3D> gameObjects;
 	Light light;
+	Sprite sprite;
 private:
 	bool InitializeDirectX(HWND hwnd);
 	bool InitializeShaders();
@@ -34,17 +36,27 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> renderTargetView;
 
 	std::shared_ptr<VertexShader> vertexshader = std::make_shared<VertexShader>();
-	std::shared_ptr<VertexShader> vertexshader2 = std::make_shared<VertexShader>();
+	std::shared_ptr<VertexShader> vertexshader_2d = std::make_shared<VertexShader>();
 
 	std::shared_ptr<PixelShader> pixelshader = std::make_shared<PixelShader>();
 	std::shared_ptr<PixelShader> pixelshader_nolight = std::make_shared<PixelShader>();
+	std::shared_ptr<PixelShader> pixelshader_2d = std::make_shared<PixelShader>();
+	std::shared_ptr<PixelShader> pixelshader_2d_mask = std::make_shared<PixelShader>();
+
+
 	ConstantBuffer<CB_VS_vertexshader> cb_vs_vertexshader;
+	ConstantBuffer<CB_VS_vertexshader_2d> cb_vs_vertexshader_2d;
+
 	ConstantBuffer<CB_PS_light> cb_ps_light;
 
 
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> depthStencilView;
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> depthStencilBuffer;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> depthStencilState;
+
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> depthStencilState_maskpredraw;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> depthStencilState_maskpostdraw;
+
 
 	Microsoft::WRL::ComPtr<ID3D11RasterizerState> rasterizerState;
 	Microsoft::WRL::ComPtr<ID3D11RasterizerState> rasterizerState_CullFront;
