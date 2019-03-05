@@ -49,16 +49,21 @@ void Graphics::RenderFrame()
 	PipelineManager::SetRasterizerState(rasterizerState.Get());
 	PipelineManager::SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	
+	PipelineManager::SetBlendState(nullptr);
 
 	//draw 2d stuff
+	//PipelineManager::SetBlendState(this->blendState.Get(), nullptr, 0x000000FF);
+
 	PipelineManager::SetDepthStencilState(depthStencilState_maskpredraw.Get());
 
 	PipelineManager::SetInputLayout(vertexshader_2d->GetInputLayout());
 	PipelineManager::SetPixelShader(pixelshader_2d_mask->GetShader());
+
 	PipelineManager::SetVertexShader(vertexshader_2d->GetShader());
 	sprite.Draw(camera2D.GetOrthoMatrix());
 
 	//draw 3d stuff
+
 	PipelineManager::SetDepthStencilState(depthStencilState_maskpostdraw.Get(), 0);
 
 	PipelineManager::SetInputLayout(vertexshader->GetInputLayout());
@@ -112,7 +117,7 @@ void Graphics::RenderFrame()
 	//Render Draw Data
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
-	swapchain->Present(1, NULL);
+	swapchain->Present(0, NULL);
 }
 
 bool Graphics::InitializeDirectX(HWND hwnd)
@@ -243,7 +248,7 @@ bool Graphics::InitializeDirectX(HWND hwnd)
 		COM_ERROR_IF_FAILED(hr, L"Failed to create rasterizer state.");
 
 		//Create Blend State
-		D3D11_RENDER_TARGET_BLEND_DESC rtbd = { 0 };
+		/*D3D11_RENDER_TARGET_BLEND_DESC rtbd = { 0 };
 		rtbd.BlendEnable = true;
 		rtbd.SrcBlend = D3D11_BLEND::D3D11_BLEND_SRC_ALPHA;
 		rtbd.DestBlend = D3D11_BLEND::D3D11_BLEND_INV_SRC_ALPHA;
@@ -251,7 +256,19 @@ bool Graphics::InitializeDirectX(HWND hwnd)
 		rtbd.SrcBlendAlpha = D3D11_BLEND::D3D11_BLEND_ONE;
 		rtbd.DestBlendAlpha = D3D11_BLEND::D3D11_BLEND_ZERO;
 		rtbd.BlendOpAlpha = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
-		rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE::D3D11_COLOR_WRITE_ENABLE_ALL;
+		rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE::D3D11_COLOR_WRITE_ENABLE_ALL;*/
+
+		D3D11_RENDER_TARGET_BLEND_DESC rtbd = { 0 };
+		rtbd.BlendEnable = true;
+		rtbd.SrcBlend = D3D11_BLEND::D3D11_BLEND_ZERO;
+		rtbd.DestBlend = D3D11_BLEND::D3D11_BLEND_ZERO;
+		rtbd.BlendOp = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
+		rtbd.SrcBlendAlpha = D3D11_BLEND::D3D11_BLEND_ZERO;
+		rtbd.DestBlendAlpha = D3D11_BLEND::D3D11_BLEND_ZERO;
+		rtbd.BlendOpAlpha = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
+		rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE::D3D11_COLOR_WRITE_ENABLE_ALPHA;
+
+
 
 		D3D11_BLEND_DESC blendDesc = { 0 };
 		blendDesc.RenderTarget[0] = rtbd;

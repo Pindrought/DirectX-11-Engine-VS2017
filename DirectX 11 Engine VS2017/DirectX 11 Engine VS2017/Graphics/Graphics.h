@@ -62,6 +62,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11RasterizerState> rasterizerState_CullFront;
 
 	Microsoft::WRL::ComPtr<ID3D11BlendState> blendState;
+	Microsoft::WRL::ComPtr<ID3D11BlendState> blendStateTransparency;
 
 	std::unique_ptr<DirectX::SpriteBatch> spriteBatch;
 	std::unique_ptr<DirectX::SpriteFont> spriteFont;
