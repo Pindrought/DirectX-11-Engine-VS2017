@@ -28,35 +28,40 @@ bool Graphics::Initialize(HWND hwnd, int width, int height)
 
 void Graphics::RenderFrame()
 {
-	this->cb_ps_light.data.dynamicLightColor = light.lightColor;
-	this->cb_ps_light.data.dynamicLightStrength = light.lightStrength;
-	this->cb_ps_light.data.dynamicLightPosition = light.GetPositionFloat3();
-	this->cb_ps_light.data.dynamicLightAttenuation_a = light.attenuation_a;
-	this->cb_ps_light.data.dynamicLightAttenuation_b = light.attenuation_b;
-	this->cb_ps_light.data.dynamicLightAttenuation_c = light.attenuation_c;
-	this->cb_ps_light.ApplyChanges();
-	this->deviceContext->PSSetConstantBuffers(0, 1, this->cb_ps_light.GetAddressOf());
+	cb_ps_light.data.dynamicLightColor = light.lightColor;
+	cb_ps_light.data.dynamicLightStrength = light.lightStrength;
+	cb_ps_light.data.dynamicLightPosition = light.GetPositionFloat3();
+	cb_ps_light.data.dynamicLightAttenuation_a = light.attenuation_a;
+	cb_ps_light.data.dynamicLightAttenuation_b = light.attenuation_b;
+	cb_ps_light.data.dynamicLightAttenuation_c = light.attenuation_c;
+	cb_ps_light.ApplyChanges();
+	deviceContext->PSSetConstantBuffers(0, 1, cb_ps_light.GetAddressOf());
 
 	float bgcolor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	this->deviceContext->ClearRenderTargetView(this->renderTargetView.Get(), bgcolor);
-	this->deviceContext->ClearDepthStencilView(this->depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	deviceContext->ClearRenderTargetView(renderTargetView.Get(), bgcolor);
+	deviceContext->ClearDepthStencilView(depthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
-	this->deviceContext->IASetInputLayout(this->vertexshader.GetInputLayout());
-	this->deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	this->deviceContext->RSSetState(this->rasterizerState.Get());
-	this->deviceContext->OMSetDepthStencilState(this->depthStencilState.Get(), 0);
-	this->deviceContext->OMSetBlendState(NULL, NULL, 0xFFFFFFFF);
-	this->deviceContext->PSSetSamplers(0, 1, this->samplerState.GetAddressOf());
-	this->deviceContext->VSSetShader(vertexshader.GetShader(), NULL, 0);
-	this->deviceContext->PSSetShader(pixelshader.GetShader(), NULL, 0);
+	deviceContext->IASetInputLayout(vertexshader.GetInputLayout());
+	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	deviceContext->RSSetState(rasterizerState.Get());
+	deviceContext->OMSetDepthStencilState(depthStencilState.Get(), 0);
+	deviceContext->OMSetBlendState(NULL, NULL, 0xFFFFFFFF);
+	deviceContext->PSSetSamplers(0, 1, samplerState.GetAddressOf());
+	deviceContext->VSSetShader(vertexshader.GetShader(), NULL, 0);
+	deviceContext->PSSetShader(pixelshader.GetShader(), NULL, 0);
 	
 	{ 
-		this->gameObject.Draw(Camera3D.GetViewMatrix() * Camera3D.GetProjectionMatrix());
+		gameObject.Draw(Camera3D.GetViewMatrix() * Camera3D.GetProjectionMatrix());
 	}
 	{
-		this->deviceContext->PSSetShader(pixelshader_nolight.GetShader(), NULL, 0);
-		this->light.Draw(Camera3D.GetViewMatrix() * Camera3D.GetProjectionMatrix());
+		deviceContext->PSSetShader(pixelshader_nolight.GetShader(), NULL, 0);
+		light.Draw(Camera3D.GetViewMatrix() * Camera3D.GetProjectionMatrix());
 	}
+
+	deviceContext->IASetInputLayout(vertexshader_2d.GetInputLayout());
+	deviceContext->PSSetShader(pixelshader_2d.GetShader(), NULL, 0);
+	deviceContext->VSSetShader(vertexshader_2d.GetShader(), NULL, 0);
+	sprite.Draw(camera2D.GetWorldMatrix() * camera2D.GetOrthoMatrix());
 
 	//Draw Text
 	static int fpsCounter = 0;
@@ -244,16 +249,32 @@ bool Graphics::InitializeShaders()
 #endif
 	}
 
-	D3D11_INPUT_ELEMENT_DESC layout[] =
+	//2d shaders
+	D3D11_INPUT_ELEMENT_DESC layout2D[] =
+	{
+		{"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
+		{"TEXCOORD", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
+	};
+
+	UINT numElements2D = ARRAYSIZE(layout2D);
+
+	if (!vertexshader_2d.Initialize(this->device, shaderfolder + L"vertexshader_2d.cso", layout2D, numElements2D))
+		return false;
+
+	if (!pixelshader_2d.Initialize(this->device, shaderfolder + L"pixelshader_2d.cso"))
+		return false;
+
+	//3d shaders
+	D3D11_INPUT_ELEMENT_DESC layout3D[] =
 	{
 		{"POSITION", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
 		{"TEXCOORD", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
 		{"NORMAL", 0, DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA, 0  },
 	};
 
-	UINT numElements = ARRAYSIZE(layout);
+	UINT numElements3D = ARRAYSIZE(layout3D);
 
-	if (!vertexshader.Initialize(this->device, shaderfolder + L"vertexshader.cso", layout, numElements))
+	if (!vertexshader.Initialize(this->device, shaderfolder + L"vertexshader.cso", layout3D, numElements3D))
 		return false;
 
 	if (!pixelshader.Initialize(this->device, shaderfolder + L"pixelshader.cso"))
@@ -281,6 +302,9 @@ bool Graphics::InitializeScene()
 		COM_ERROR_IF_FAILED(hr, "Failed to create wic texture from file.");
 
 		//Initialize Constant Buffer(s)
+		hr = this->cb_vs_vertexshader_2d.Initialize(this->device.Get(), this->deviceContext.Get());
+		COM_ERROR_IF_FAILED(hr, "Failed to initialize 2d constant buffer.");
+
 		hr = this->cb_vs_vertexshader.Initialize(this->device.Get(), this->deviceContext.Get());
 		COM_ERROR_IF_FAILED(hr, "Failed to initialize constant buffer.");
 
@@ -295,6 +319,11 @@ bool Graphics::InitializeScene()
 
 		if (!light.Initialize(this->device.Get(), this->deviceContext.Get(), this->cb_vs_vertexshader))
 			return false;
+
+		if (!sprite.Initialize(this->device.Get(), this->deviceContext.Get(), 256, 256, "Data/Textures/sprite_256x256.png", cb_vs_vertexshader_2d))
+			return false;
+
+		camera2D.SetProjectionValues(windowWidth, windowHeight, 0.0f, 1.0f);
 
 		Camera3D.SetPosition(0.0f, 0.0f, -2.0f);
 		Camera3D.SetProjectionValues(90.0f, static_cast<float>(windowWidth) / static_cast<float>(windowHeight), 0.1f, 3000.0f);

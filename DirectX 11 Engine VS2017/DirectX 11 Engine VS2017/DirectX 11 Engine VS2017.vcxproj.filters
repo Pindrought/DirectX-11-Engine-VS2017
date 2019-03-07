@@ -132,6 +132,9 @@
     <ClCompile Include="Graphics\Camera2D.cpp">
       <Filter>Source Files\Graphics</Filter>
     </ClCompile>
+    <ClCompile Include="Graphics\Sprite.cpp">
+      <Filter>Source Files\Graphics</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ErrorLogger.h">
@@ -248,6 +251,9 @@
     <ClInclude Include="Graphics\Camera2D.h">
       <Filter>Header Files\Graphics</Filter>
     </ClInclude>
+    <ClInclude Include="Graphics\Sprite.h">
+      <Filter>Header Files\Graphics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="vertexshader.hlsl">
@@ -257,6 +263,12 @@
       <Filter>Resource Files</Filter>
     </FxCompile>
     <FxCompile Include="pixelshader_nolight.hlsl">
+      <Filter>Resource Files</Filter>
+    </FxCompile>
+    <FxCompile Include="pixelshader_2d.hlsl">
+      <Filter>Resource Files</Filter>
+    </FxCompile>
+    <FxCompile Include="vertexshader_2d.hlsl">
       <Filter>Resource Files</Filter>
     </FxCompile>
   </ItemGroup>

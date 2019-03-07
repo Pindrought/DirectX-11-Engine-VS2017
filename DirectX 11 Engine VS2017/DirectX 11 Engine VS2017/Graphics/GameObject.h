@@ -21,7 +21,7 @@ public:
 	void AdjustRotation(const XMVECTOR & rot);
 	void AdjustRotation(const XMFLOAT3 & rot);
 	void AdjustRotation(float x, float y, float z);
-	
+	void SetScale(float xScale, float yScale, float zScale = 1.0f);
 protected:
 	virtual void UpdateMatrix();
 
@@ -30,4 +30,5 @@ protected:
 	XMFLOAT3 pos;
 	XMFLOAT3 rot;
 
+	XMFLOAT3 scale;
 };
