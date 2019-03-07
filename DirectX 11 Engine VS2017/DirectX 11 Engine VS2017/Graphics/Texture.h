@@ -25,11 +25,11 @@ public:
 	aiTextureType GetType();
 	ID3D11ShaderResourceView * GetTextureResourceView();
 	ID3D11ShaderResourceView ** GetTextureResourceViewAddress();
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> textureView = nullptr;
 
 private:
 	void Initialize1x1ColorTexture(const Color & colorData, aiTextureType type);
 	void InitializeColorTexture(const Color * colorData, UINT width, UINT height, aiTextureType type);
 	Microsoft::WRL::ComPtr<ID3D11Resource> texture = nullptr;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> textureView = nullptr;
 	aiTextureType type = aiTextureType::aiTextureType_UNKNOWN;
 };
