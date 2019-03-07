@@ -1,6 +1,6 @@
-#include "Camera.h"
+#include "Camera3D.h"
 
-Camera::Camera()
+Camera3D::Camera3D()
 {
 	this->pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	this->posVector = XMLoadFloat3(&this->pos);
@@ -9,29 +9,29 @@ Camera::Camera()
 	this->UpdateMatrix();
 }
 
-void Camera::SetProjectionValues(float fovDegrees, float aspectRatio, float nearZ, float farZ)
+void Camera3D::SetProjectionValues(float fovDegrees, float aspectRatio, float nearZ, float farZ)
 {
 	float fovRadians = (fovDegrees / 360.0f) * XM_2PI;
 	this->projectionMatrix = XMMatrixPerspectiveFovLH(fovRadians, aspectRatio, nearZ, farZ);
 }
 
-const XMMATRIX & Camera::GetViewMatrix() const
+const XMMATRIX & Camera3D::GetViewMatrix() const
 {
 	return this->viewMatrix;
 }
 
-const XMMATRIX & Camera::GetProjectionMatrix() const
+const XMMATRIX & Camera3D::GetProjectionMatrix() const
 {
 	return this->projectionMatrix;
 }
 
-void Camera::UpdateMatrix() //Updates view matrix and also updates the movement vectors
+void Camera3D::UpdateMatrix() //Updates view matrix and also updates the movement vectors
 {
-	//Calculate camera rotation matrix
+	//Calculate Camera3D rotation matrix
 	XMMATRIX camRotationMatrix = XMMatrixRotationRollPitchYaw(this->rot.x, this->rot.y, this->rot.z);
-	//Calculate unit vector of cam target based off camera forward value transformed by cam rotation matrix
+	//Calculate unit vector of cam target based off Camera3D forward value transformed by cam rotation matrix
 	XMVECTOR camTarget = XMVector3TransformCoord(this->DEFAULT_FORWARD_VECTOR, camRotationMatrix);
-	//Adjust cam target to be offset by the camera's current position
+	//Adjust cam target to be offset by the Camera3D's current position
 	camTarget += this->posVector;
 	//Calculate up direction based on current rotation
 	XMVECTOR upDir = XMVector3TransformCoord(this->DEFAULT_UP_VECTOR, camRotationMatrix);

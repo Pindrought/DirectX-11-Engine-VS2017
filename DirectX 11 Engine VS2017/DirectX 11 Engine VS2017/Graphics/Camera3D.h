@@ -1,11 +1,11 @@
 #pragma once
-#include "GameObject.h"
+#include "GameObject3D.h"
 using namespace DirectX;
 
-class Camera : public GameObject
+class Camera3D : public GameObject3D
 {
 public:
-	Camera();
+	Camera3D();
 	void SetProjectionValues(float fovDegrees, float aspectRatio, float nearZ, float farZ);
 
 	const XMMATRIX & GetViewMatrix() const;
