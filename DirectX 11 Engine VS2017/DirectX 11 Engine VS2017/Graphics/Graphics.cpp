@@ -45,18 +45,12 @@ void Graphics::RenderFrame()
 	deviceContext->RSSetState(rasterizerState.Get());
 	deviceContext->OMSetBlendState(NULL, NULL, 0xFFFFFFFF);
 	deviceContext->PSSetSamplers(0, 1, samplerState.GetAddressOf());
-	
-	
-	deviceContext->OMSetDepthStencilState(depthStencilState_drawMask.Get(), 0);
-	deviceContext->IASetInputLayout(vertexshader_2d.GetInputLayout());
-	deviceContext->PSSetShader(pixelshader_2d.GetShader(), NULL, 0);
-	deviceContext->VSSetShader(vertexshader_2d.GetShader(), NULL, 0);
-	sprite.Draw(camera2D.GetWorldMatrix() * camera2D.GetOrthoMatrix());
+
 
 	deviceContext->VSSetShader(vertexshader.GetShader(), NULL, 0);
 	deviceContext->PSSetShader(pixelshader.GetShader(), NULL, 0);
 	deviceContext->IASetInputLayout(vertexshader.GetInputLayout());
-	deviceContext->OMSetDepthStencilState(depthStencilState_applyMask.Get(), 0);
+	deviceContext->OMSetDepthStencilState(depthStencilState.Get(), 0);
 
 	{ 
 		gameObject.Draw(Camera3D.GetViewMatrix() * Camera3D.GetProjectionMatrix());
@@ -80,6 +74,18 @@ void Graphics::RenderFrame()
 	}
 	spriteBatch->Begin();
 	spriteFont->DrawString(spriteBatch.get(), StringHelper::StringToWide(fpsString).c_str(), DirectX::XMFLOAT2(0, 0), DirectX::Colors::White, 0.0f, DirectX::XMFLOAT2(0.0f,0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
+	spriteBatch->End();
+
+	//sprite mask
+	deviceContext->OMSetDepthStencilState(depthStencilState_drawMask.Get(), 0);
+	deviceContext->IASetInputLayout(vertexshader_2d.GetInputLayout());
+	deviceContext->PSSetShader(nullptr, NULL, 0);
+	deviceContext->VSSetShader(vertexshader_2d.GetShader(), NULL, 0);
+	sprite.Draw(camera2D.GetWorldMatrix() * camera2D.GetOrthoMatrix());
+
+	//red text
+	spriteBatch->Begin(SpriteSortMode_Deferred, nullptr, nullptr, depthStencilState_applyMask.Get());
+	spriteFont->DrawString(spriteBatch.get(), StringHelper::StringToWide(fpsString).c_str(), DirectX::XMFLOAT2(0, 0), DirectX::Colors::Red, 0.0f, DirectX::XMFLOAT2(0.0f, 0.0f), DirectX::XMFLOAT2(1.0f, 1.0f));
 	spriteBatch->End();
 
 	static int counter = 0;
@@ -363,7 +369,8 @@ bool Graphics::InitializeScene()
 		if (!sprite.Initialize(this->device.Get(), this->deviceContext.Get(), 256, 256, "Data/Textures/sprite_256x256.png", cb_vs_vertexshader_2d))
 			return false;
 
-		sprite.SetPosition(XMFLOAT3(windowWidth / 2 - sprite.GetWidth() / 2, windowHeight / 2 - sprite.GetHeight() / 2, 0.0f));
+		sprite.SetPosition(XMFLOAT3(0.0f, 0.0f, 0.0f));
+		sprite.SetScale(24, 24, 0.0f);
 
 		camera2D.SetProjectionValues(windowWidth, windowHeight, 0.0f, 1.0f);
 
