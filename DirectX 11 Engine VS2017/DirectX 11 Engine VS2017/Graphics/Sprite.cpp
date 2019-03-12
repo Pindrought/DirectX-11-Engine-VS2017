@@ -9,7 +9,21 @@ bool Sprite::Initialize(ID3D11Device * device, ID3D11DeviceContext * deviceConte
 
 	this->cb_vs_vertexshader_2d = &cb_vs_vertexshader_2d;
 
-	texture = std::make_unique<Texture>(device, spritePath, aiTextureType::aiTextureType_DIFFUSE);
+	//texture = std::make_unique<Texture>(device, spritePath, aiTextureType::aiTextureType_DIFFUSE);
+
+	Color data[16][16];
+	for (int i = 0; i < 16; i++)
+	{
+		for (int j = 0; j < 16; j++)
+		{
+			data[i][j].SetR(255 * (i % 2));
+			data[i][j].SetG(0);
+			data[i][j].SetB(0);
+
+			data[i][j].SetA(255);
+		}
+	}
+	texture = std::make_unique<Texture>(device, (const Color*)data, 16, 16, aiTextureType_DIFFUSE);
 
 	std::vector<Vertex2D> vertexData =
 	{

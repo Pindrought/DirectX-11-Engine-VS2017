@@ -36,11 +36,13 @@ private:
 
 	VertexShader vertexshader_2d;
 	VertexShader vertexshader;
+	VertexShader vertexshader_silhouette;
 	PixelShader pixelshader_2d;
 	PixelShader pixelshader_2d_discard;
 
 	PixelShader pixelshader;
 	PixelShader pixelshader_nolight;
+	PixelShader pixelshader_silhouette;
 	ConstantBuffer<CB_VS_vertexshader_2d> cb_vs_vertexshader_2d;
 	ConstantBuffer<CB_VS_vertexshader> cb_vs_vertexshader;
 	ConstantBuffer<CB_PS_light> cb_ps_light;

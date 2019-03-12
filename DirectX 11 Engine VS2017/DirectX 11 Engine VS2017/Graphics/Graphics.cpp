@@ -48,25 +48,41 @@ void Graphics::RenderFrame()
 
 
 	//sprite mask
-	deviceContext->OMSetDepthStencilState(depthStencilState_drawMask.Get(), 0);
+	deviceContext->OMSetDepthStencilState(depthStencilState.Get(), 0);
 	deviceContext->IASetInputLayout(vertexshader_2d.GetInputLayout());
-	deviceContext->PSSetShader(pixelshader_2d_discard.GetShader(), NULL, 0);
+	deviceContext->PSSetShader(pixelshader_2d.GetShader(), NULL, 0);
 	deviceContext->VSSetShader(vertexshader_2d.GetShader(), NULL, 0);
 	sprite.Draw(camera2D.GetWorldMatrix() * camera2D.GetOrthoMatrix());
 
 
-	deviceContext->VSSetShader(vertexshader.GetShader(), NULL, 0);
-	deviceContext->PSSetShader(pixelshader.GetShader(), NULL, 0);
-	deviceContext->IASetInputLayout(vertexshader.GetInputLayout());
-	deviceContext->OMSetDepthStencilState(depthStencilState_applyMask.Get(), 0);
+	//deviceContext->VSSetShader(vertexshader.GetShader(), NULL, 0);
+	//deviceContext->PSSetShader(pixelshader.GetShader(), NULL, 0);
+	//deviceContext->IASetInputLayout(vertexshader.GetInputLayout());
+	//deviceContext->OMSetDepthStencilState(depthStencilState_applyMask.Get(), 0);
 
-	{ 
-		gameObject.Draw(Camera3D.GetViewMatrix() * Camera3D.GetProjectionMatrix());
-	}
-	{
-		deviceContext->PSSetShader(pixelshader_nolight.GetShader(), NULL, 0);
-		light.Draw(Camera3D.GetViewMatrix() * Camera3D.GetProjectionMatrix());
-	}
+	//{
+	//	//draw object normally as mask but omit pixel shader
+	//	deviceContext->VSSetShader(vertexshader.GetShader(), NULL, 0);
+	//	deviceContext->PSSetShader(nullptr, NULL, 0);
+	//	deviceContext->IASetInputLayout(vertexshader.GetInputLayout());
+	//	deviceContext->OMSetDepthStencilState(depthStencilState_drawMask.Get(), 0);
+
+	//	gameObject.Draw(Camera3D.GetViewMatrix() * Camera3D.GetProjectionMatrix());
+
+	//	//draw silhouette outline and apply mask
+	//	//draw object normally as mask but omit pixel shader
+	//	deviceContext->VSSetShader(vertexshader_silhouette.GetShader(), NULL, 0);
+	//	deviceContext->PSSetShader(pixelshader_silhouette.GetShader(), NULL, 0);
+	//	deviceContext->OMSetDepthStencilState(depthStencilState_applyMask.Get(), 0);
+
+	//	gameObject.Draw(Camera3D.GetViewMatrix() * Camera3D.GetProjectionMatrix());
+	//}
+	//{
+	//	deviceContext->OMSetDepthStencilState(depthStencilState.Get(), 0);
+	//	deviceContext->VSSetShader(vertexshader.GetShader(), NULL, 0);
+	//	deviceContext->PSSetShader(pixelshader_nolight.GetShader(), NULL, 0);
+	//	light.Draw(Camera3D.GetViewMatrix() * Camera3D.GetProjectionMatrix());
+	//}
 
 	
 
@@ -144,7 +160,7 @@ bool Graphics::InitializeDirectX(HWND hwnd)
 		hr = D3D11CreateDeviceAndSwapChain(adapters[0].pAdapter, //IDXGI Adapter
 			D3D_DRIVER_TYPE_UNKNOWN,
 			NULL, //FOR SOFTWARE DRIVER TYPE
-			NULL, //FLAGS FOR RUNTIME LAYERS
+			D3D11_CREATE_DEVICE_DEBUG, //FLAGS FOR RUNTIME LAYERS
 			NULL, //FEATURE LEVELS ARRAY
 			0, //# OF FEATURE LEVELS IN ARRAY
 			D3D11_SDK_VERSION,
@@ -209,7 +225,7 @@ bool Graphics::InitializeDirectX(HWND hwnd)
 		depthstencildesc_applyMask.BackFace.StencilFailOp = D3D11_STENCIL_OP::D3D11_STENCIL_OP_KEEP;
 		depthstencildesc_applyMask.BackFace.StencilPassOp = D3D11_STENCIL_OP::D3D11_STENCIL_OP_KEEP;
 
-		depthstencildesc_applyMask.FrontFace.StencilFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_LESS;
+		depthstencildesc_applyMask.FrontFace.StencilFunc = D3D11_COMPARISON_FUNC::D3D11_COMPARISON_EQUAL;
 		depthstencildesc_applyMask.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP::D3D11_STENCIL_OP_KEEP;
 		depthstencildesc_applyMask.FrontFace.StencilFailOp = D3D11_STENCIL_OP::D3D11_STENCIL_OP_KEEP;
 		depthstencildesc_applyMask.FrontFace.StencilPassOp = D3D11_STENCIL_OP::D3D11_STENCIL_OP_KEEP;
@@ -322,7 +338,14 @@ bool Graphics::InitializeShaders()
 	if (!vertexshader.Initialize(this->device, shaderfolder + L"vertexshader.cso", layout3D, numElements3D))
 		return false;
 
+	if (!vertexshader_silhouette.Initialize(this->device, shaderfolder + L"vertexshader_silhouette.cso", layout3D, numElements3D))
+		return false;
+
+
 	if (!pixelshader.Initialize(this->device, shaderfolder + L"pixelshader.cso"))
+		return false;
+
+	if (!pixelshader_silhouette.Initialize(this->device, shaderfolder + L"pixelshader_silhouette.cso"))
 		return false;
 
 	if (!pixelshader_nolight.Initialize(this->device, shaderfolder + L"pixelshader_nolight.cso"))

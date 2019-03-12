@@ -66,11 +66,30 @@ void Texture::Initialize1x1ColorTexture(ID3D11Device * device, const Color & col
 void Texture::InitializeColorTexture(ID3D11Device * device, const Color * colorData, UINT width, UINT height, aiTextureType type)
 {
 	this->type = type;
-	CD3D11_TEXTURE2D_DESC textureDesc(DXGI_FORMAT_R8G8B8A8_UNORM, width, height);
+
+	const int textureWidth = 16;
+	const int textureHeight = 16;
+
+	CD3D11_TEXTURE2D_DESC textureDesc(DXGI_FORMAT_R8G8B8A8_UNORM, textureWidth, textureHeight, 1, 1, D3D11_BIND_SHADER_RESOURCE);
 	ID3D11Texture2D * p2DTexture = nullptr;
+
+	Color data[textureHeight][textureWidth];
+	for (int i = 0; i < textureHeight; i++)
+	{
+		for (int j = 0; j < textureWidth; j++)
+		{
+			data[i][j].SetR(120 * (i*j % 2));
+			data[i][j].SetG(0);
+			data[i][j].SetB(0);
+
+			data[i][j].SetA(255);
+		}
+	}
+
 	D3D11_SUBRESOURCE_DATA initialData{};
-	initialData.pSysMem = colorData;
-	initialData.SysMemPitch = width * sizeof(Color);
+	initialData.pSysMem = data;
+	initialData.SysMemPitch = textureWidth * sizeof(Color);
+
 	HRESULT hr = device->CreateTexture2D(&textureDesc, &initialData, &p2DTexture);
 	COM_ERROR_IF_FAILED(hr, "Failed to initialize texture from color data.");
 	texture = static_cast<ID3D11Texture2D*>(p2DTexture);
