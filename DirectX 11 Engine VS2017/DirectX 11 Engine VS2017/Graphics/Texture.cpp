@@ -70,7 +70,7 @@ void Texture::InitializeColorTexture(ID3D11Device * device, const Color * colorD
 	const int textureWidth = 16;
 	const int textureHeight = 16;
 
-	CD3D11_TEXTURE2D_DESC textureDesc(DXGI_FORMAT_R8G8B8A8_UNORM, textureWidth, textureHeight, 1, 1, D3D11_BIND_SHADER_RESOURCE);
+	CD3D11_TEXTURE2D_DESC textureDesc(DXGI_FORMAT_R8G8B8A8_UNORM, textureWidth, textureHeight, 1, 1);
 	ID3D11Texture2D * p2DTexture = nullptr;
 
 	Color data[textureHeight][textureWidth];
