@@ -17,12 +17,12 @@ public:
 	VertexBuffer() {}
 
 
-	ID3D11Buffer* Get()const
+	ID3D11Buffer* Get() const
 	{
 		return buffer.Get();
 	}
 
-	ID3D11Buffer* const* GetAddressOf()const
+	ID3D11Buffer ** GetAddressOf() const
 	{
 		return buffer.GetAddressOf();
 	}
@@ -32,12 +32,12 @@ public:
 		return vertexCount;
 	}
 
-	const UINT Stride() const
+	UINT Stride() const
 	{
 		return stride;
 	}
 
-	const UINT * StridePtr() const
+	UINT * StridePtr() const
 	{
 		return &stride;
 	}

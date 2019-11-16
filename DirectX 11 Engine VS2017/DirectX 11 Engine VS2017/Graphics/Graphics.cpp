@@ -269,8 +269,6 @@ bool Graphics::InitializeDirectX(HWND hwnd)
 		rtbd.BlendOpAlpha = D3D11_BLEND_OP::D3D11_BLEND_OP_ADD;
 		rtbd.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE::D3D11_COLOR_WRITE_ENABLE_ALPHA;
 
-
-
 		D3D11_BLEND_DESC blendDesc = { 0 };
 		blendDesc.RenderTarget[0] = rtbd;
 

@@ -3,6 +3,7 @@
 
 PipelineManager::PipelineManager()
 {
+	NewFrame();
 }
 
 #pragma region
@@ -53,48 +54,6 @@ bool PipelineManager::GetResource(std::wstring id, datatype *& pOutResource) \
 #include "PipelineManager.inl"
 #pragma endregion This is a region to generate the definitions for the GetResource and RegisterResource functions for the data types from the PipelineManager.inl inline file
 
-//bool PipelineManager::GetResource(std::wstring id, VertexShader *& pOutResource)
-//{
-//	std::unordered_map<std::wstring, std::shared_ptr<VertexShader>>::iterator it;
-//	it = resourceMaps.vertexshaders.find(id);
-//	
-//	if (it != resourceMaps.vertexshaders.end()) //If resource was found
-//	{
-//		pOutResource = it->second.get();
-//		return true; //return true if resource was found
-//	}
-//
-//	pOutResource = nullptr;
-//	return false; //return false if no matching resource found
-//}
-
-
-
-
-
-//IPipelineResource * PipelineManager::GetResource(PipelineResourceType type, std::wstring name)
-//{
-//	std::unordered_map<std::wstring, IPipelineResource*>::iterator it;
-//	std::unordered_map<std::wstring, IPipelineResource*> * usemap = nullptr;
-//	switch (type)
-//	{
-//	case PipelineResourceType::PRT_PixelShader:
-//		usemap = &resourceMaps.pixelshaders;
-//		break;
-//	case PipelineResourceType::PRT_VertexShader:
-//		usemap = &resourceMaps.vertexshaders;
-//		break;
-//	default:
-//		break;
-//	}
-//
-//	it = usemap->find(name);
-//
-//	if (it != usemap->end()) //If resource was found
-//		return it->second; //return ptr to resource retrieved from map
-//
-//	return nullptr; //return nullptr if resource was not found
-//}
 
 void PipelineManager::RegisterDevice(ComPtr<ID3D11Device> device)
 {

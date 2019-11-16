@@ -37,12 +37,9 @@ void Engine::Update()
 	while (!mouse.EventBufferIsEmpty())
 	{
 		MouseEvent me = mouse.ReadEvent();
-		if (mouse.IsRightDown())
+		if (me.GetType() == MouseEvent::EventType::RAW_MOVE && mouse.IsLeftDown())
 		{
-			if (me.GetType() == MouseEvent::EventType::RAW_MOVE)
-			{
-				gfx.camera3D.AdjustRotation((float)me.GetPosY() * 0.01f, (float)me.GetPosX() * 0.01f, 0);
-			}
+			gfx.camera3D.AdjustRotation((float)me.GetPosY() * 0.01f, (float)me.GetPosX() * 0.01f, 0);
 		}
 	}
 

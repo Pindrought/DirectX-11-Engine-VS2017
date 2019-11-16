@@ -30,7 +30,7 @@ Texture::Texture(const std::wstring & filePath, aiTextureType type)
 	}
 	else
 	{
-		HRESULT hr = DirectX::CreateWICTextureFromFile(device, filePath.c_str(), texture.GetAddressOf(), textureView.GetAddressOf());
+		HRESULT hr = DirectX::CreateWICTextureFromFile(device, filePath.c_str(), nullptr, textureView.GetAddressOf());
 		if (FAILED(hr))
 		{
 			Initialize1x1ColorTexture(Colors::UnloadedTextureColor, type);
