@@ -15,8 +15,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		return -1;
 	}
 
+	int width = GetSystemMetrics(SM_CXFULLSCREEN) * 0.9;
+	int height = GetSystemMetrics(SM_CYFULLSCREEN) * 0.9;
+
 	Engine engine;
-	if (engine.Initialize(hInstance, "Title", "MyWindowClass", 1920, 1080))
+	if (engine.Initialize(hInstance, "Title", "MyWindowClass", width, height))
 	{
 		while (engine.ProcessMessages() == true)
 		{
